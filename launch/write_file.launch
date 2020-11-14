@@ -1,0 +1,4 @@
+<launch>
+    <node pkg="water_drone" type="get_sensor_data.py" name="waspmote_sensors" respawn="true" />
+    <node pkg="water_drone" type="get_gps.py" name="write_file" respawn="true" />
+</launch> 
