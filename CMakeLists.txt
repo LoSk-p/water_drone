@@ -190,7 +190,7 @@ include_directories(
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)
  install(FILES
-   launch/write_file.launch
+   launch/writing_file.launch
    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
  )
 
