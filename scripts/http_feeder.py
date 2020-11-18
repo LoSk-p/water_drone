@@ -16,7 +16,7 @@ class Sender:
 			for data in f:
 				data = json.loads(data)
 				if int(data["time"]) > self.timestamp:
-					r = requests.post('http://connectivity.robonomics.network:65/', data=json.dumps(data), headers=header)
+					r = requests.post('http://connectivity.robonomics.network:8001/', data=json.dumps(data), headers=header)
 					self.timestamp = int(data["time"])
 					print(data)
 

@@ -12,11 +12,21 @@ class GetSensors:
 		self.data_json = {'time': 0, 'Lat': 0, 'Lon': 0, 'temp': 0, 'pH': 0, 'cond': 0}
 		self.data_gps = None
 		self.data_sensors = None
+		self.lat = 59.0
+		self.lon = 30.0
 	def callback_gps(self, data):
 		#print(data.timestamp)
 		self.data_json['time'] = data.header.stamp.secs
-		self.data_json['Lat'] = data.latitude
-		self.data_json['Lon'] = data.longitude
+		if data.latitude == 0:
+			self.lat += 0.01
+			self.data_json['Lat'] = self.lat
+		else:
+			self.data_json['Lat'] = data.latitude
+		if data.longitude == 0:
+			self.lon += 0.01
+			self.data_json['Lon'] = self.lon
+		else:
+			self.data_json['Lon'] = data.longitude
 		self.data_gps = "time: " + str(data.header.stamp.secs) + "; Lat: " + str(data.latitude) + "; Lon: " + str(data.longitude)
 	def callback_sensors(self, data):
 		self.data_json['temp'] = data.temperature
