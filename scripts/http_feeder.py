@@ -5,29 +5,52 @@ from config.default import drone
 import json
 import requests
 import subprocess
-from dataclasses import dataclass
 import rospy
 import time
 
-@dataclass()
+
 class Sender:
-	timestamp: float  = 0
+	def __init__(self):
+		self.timestamp = 0
+		try:
+			with open("/home/ubuntu/catkin_ws/src/water_drone/config/last_date", "r") as file:
+				for line in file:
+					line = json.loads(line)
+					self.timestamp = line["time"]
+					print(self.timestamp)
+		except Exception as e:
+			print(e)
+			print("inside except")
+			pass
+
 	def _parse(self):
-		
-		header = {"Content-type": "application/json"}
+		#print(self.timestamp)
+
 		try:
 			with open("/home/ubuntu/data/gps-sensors.json", "r") as file:
 				for data in file:
 					data = json.loads(data)
-					if int(data["time"]) > self.timestamp:
-						key = drone()['SECRET']
-						dir = drone()['DIR']
-						program = f"echo '{data}' | {dir}robonomics io write datalog --remote wss://substrate.ipci.io -s {key}"
-						#program = "echo " + str(data) + " | " + dir + "robonomics io write datalog -s " + key
+					key = drone()['SECRET']
+					dir = drone()['DIR']
+
+					if "time" in data.keys():
+						if int(data["time"]) > self.timestamp:
+							program = f"echo '{data}' | {dir}robonomics io write datalog --remote wss://substrate.ipci.io -s {key}"
+							#program = "echo " + str(data) + " | " + dir + "robonomics io write datalog -s " + key
+							process_robonomics = subprocess.Popen(program, shell=True, stdout=subprocess.PIPE)
+							output = process_robonomics.stdout.readline()
+							self.timestamp = int(data["time"])
+							with open("/home/ubuntu/catkin_ws/src/water_drone/config/last_date", "w") as cash:
+								cash.write(str(json.dumps(data)))
+							print(f'Data sent to DAO IPCI {output.strip()}')
+					elif int(data["timestamp"]) > self.timestamp:
+						print(f'fromdate {data["timestamp"]}')
+						print(f'old time {self.timestamp}')
+						self.timestamp = int(data["timestamp"])
+						date = data["date"]
+						program = f"echo '{date}' | {dir}robonomics io write datalog --remote wss://substrate.ipci.io -s {key}"
 						process_robonomics = subprocess.Popen(program, shell=True, stdout=subprocess.PIPE)
-						output = process_robonomics.stdout.readline()
-						self.timestamp = int(data["time"])
-						print(f'Data sent to DAO IPCI {output.strip()}')
+
 		except Exception as e:
 			rospy.logerr(f'error: {e}')
 			rospy.loginfo('after e')
@@ -42,5 +65,6 @@ class Sender:
 			if networks[essid:essid_end] != 'off/any':
 				self._parse()
 
-Sender()._check_connection()
+sender = Sender()
+sender._check_connection()
 
