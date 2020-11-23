@@ -2,4 +2,5 @@
     <include file="$(find mavros)/launch/px4.launch"/>
     <node pkg="water_drone" type="get_sensor_data.py" name="waspmote_sensors" respawn="true" output="screen" />
     <node pkg="water_drone" type="get_gps.py" name="write_file" respawn="true" output="screen" />
+    <node pkg="water_drone" type="http_feeder.py" name="data_sender" output="screen" />
 </launch> 

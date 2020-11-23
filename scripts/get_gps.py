@@ -2,7 +2,6 @@
 #!/usr/bin/env python3
 import rospy
 from sensor_msgs.msg import NavSatFix
-from rospy_message_converter import json_message_converter
 from water_drone.msg import SensorData
 import json
 

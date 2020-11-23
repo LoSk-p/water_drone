@@ -164,6 +164,7 @@ include_directories(
  catkin_install_python(PROGRAMS
    scripts/get_sensor_data.py
    scripts/get_gps.py
+   scripts/http_feeder.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
 
