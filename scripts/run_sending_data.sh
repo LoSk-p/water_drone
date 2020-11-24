@@ -1,5 +1,7 @@
 #!/bin/bash
 
+source /opt/ros/noetic/setup.bash
+source /home/ubuntu/catkin_ws/devel/setup.bash
 date_timestamp=$(date +"%s")
 date_time=$(date)
 date_time=$(echo "{\"timestamp\": \""$date_timestamp"\", \"date\": \""$date_time"\"}")

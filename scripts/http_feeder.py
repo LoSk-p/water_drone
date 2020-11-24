@@ -29,6 +29,8 @@ class Sender:
 		try:
 			with open("/home/ubuntu/data/gps-sensors.json", "r") as file:
 				for data in file:
+					if data[0] != "{":
+						continue
 					data = json.loads(data)
 					key = drone()['SECRET']
 					dir = drone()['DIR']
@@ -40,8 +42,11 @@ class Sender:
 							process_robonomics = subprocess.Popen(program, shell=True, stdout=subprocess.PIPE)
 							output = process_robonomics.stdout.readline()
 							self.timestamp = int(data["time"])
+							#time.sleep(2)
 							with open("/home/ubuntu/catkin_ws/src/water_drone/config/last_date", "w") as cash:
-								cash.write(str(json.dumps(data)))
+								json.dump(data, cash)
+								print("data sent")
+								#cash.write(json.dumps(data))
 							print(f'Data sent to DAO IPCI {output.strip()}')
 					elif int(data["timestamp"]) > self.timestamp:
 						print(f'fromdate {data["timestamp"]}')
