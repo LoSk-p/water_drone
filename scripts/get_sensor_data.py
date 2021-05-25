@@ -21,16 +21,21 @@ class WaspmoteSensors:
 		time.sleep(1)
 		pub = rospy.Publisher("sensor_data", SensorData, queue_size = 10)
 		while not rospy.is_shutdown():
-			if ser.inWaiting() > 0:
-				data = str(ser.readline())
-				data_prev = data[2:]
-				print(data_prev)
-				if data_prev[0] == "<":
-					data_prev = data_prev.split('#')
-					data = {'temperature': data_prev[4].split(':')[1], 
-						'pH': data_prev[5].split(':')[1],
-						'conductivity': data_prev[7].split(':')[1]}
-					self.get_msg_data(data)
-					pub.publish(self.data_msg)
+			with open('/home/ubuntu/sensor_data_with_time', 'a') as f:
+				if ser.inWaiting() > 0:
+					data = str(ser.readline())
+					data_prev = data[2:]
+					print(data_prev)
+					if data_prev[0] == "<":
+						data_prev = data_prev.split('#')
+						data = {'temperature': data_prev[4].split(':')[1], 
+							'pH': data_prev[5].split(':')[1],
+							'conductivity': data_prev[7].split(':')[1]}
+						data_time = {'time': time.time(),'temperature': data_prev[4].split(':')[1], 
+							'pH': data_prev[5].split(':')[1],
+							'conductivity': data_prev[7].split(':')[1]}
+						f.write(f'{data_time}\n')
+						self.get_msg_data(data)
+						pub.publish(self.data_msg)
 
 WaspmoteSensors().publish_data()
