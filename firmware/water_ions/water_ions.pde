@@ -29,6 +29,8 @@
 #include <smartWaterIons.h>
 #include <WaspFrame.h>
 
+char node_ID[] = "IONS";
+
 // All Ion sensors can be connected in the four sockets
 // In Plug&Sense SOCKETE is reserved for reference probe
 //======================================================================
@@ -108,7 +110,8 @@ void setup()
 {
   // Turn ON the Smart Water Ions Board and USB
   SWIonsBoard.ON();
-  USB.ON();  
+  USB.ON(); 
+  frame.setID(node_ID); 
   
   // Set SD ON
   SD.ON();

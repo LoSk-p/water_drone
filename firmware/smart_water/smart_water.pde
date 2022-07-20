@@ -24,7 +24,7 @@
 #include <WaspSensorSW.h>
 #include <WaspFrame.h>
 
-char node_ID[] = "DOV01SW";
+char node_ID[] = "WATER";
 
 // pH Sensor calibration values
 #define cal_point_10 1.987 // at 27.980 toC
