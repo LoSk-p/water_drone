@@ -67,6 +67,7 @@ class WaspmoteSensors:
                         "conductivity": data_prev[7].split(":")[1],
                     }
                     f.write(f"{data_time}\n")
+                    f.flush()
                     f.close()
                     self.get_msg_data(data)
                     pub.publish(self.data_msg)
