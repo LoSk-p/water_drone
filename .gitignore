@@ -1,4 +1,4 @@
-/config/default.py
+/config/config.json
 *.sw*
 /build
 /config/__pycache__

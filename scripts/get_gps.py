@@ -4,11 +4,13 @@ import rospy
 from sensor_msgs.msg import NavSatFix
 from water_drone.msg import SensorData
 import json
+import datetime
 
 class GetSensors:
 	def __init__(self):
 		rospy.init_node("write_file", anonymous=True)
 		self.data_json = {'time': 0, 'Lat': 0, 'Lon': 0, 'temp': 0, 'pH': 0, 'cond': 0}
+		self.current_date = str(datetime.datetime.now().strftime("%Y_%m_%d"))
 		self.data_gps = None
 		self.data_sensors = None
 		self.lat = 59.0
@@ -32,7 +34,7 @@ class GetSensors:
 		self.data_json['pH'] = data.pH
 		self.data_json['cond'] = data.conductivity
 		self.data_sensors = "; Temperature: " + str(data.temperature) + "; pH: " + str(data.pH) + "; conductivity: " + str(data.conductivity) + ";\n"
-		with open("/home/ubuntu/data/gps-sensors.json", "a") as file:
+		with open("/home/pi/data/gps-sensors.json", "a") as file:
 			#file.write(self.data_gps + self.data_sensors)
 			json.dump(self.data_json, file)
 			file.write("\n")

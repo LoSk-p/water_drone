@@ -1,75 +1,61 @@
+#!/usr/bin/env python3
 
-#!/usr/bin/env python3 
-
-from config.default import drone
-import json
 import requests
-import subprocess
 import rospy
 import time
+import datetime
+import glob
+from pinatapy import PinataPy
+import robonomicsinterface as RI
+import os
 
 
 class Sender:
-	def __init__(self):
-		self.timestamp = 0
-		try:
-			with open("/home/ubuntu/catkin_ws/src/water_drone/config/last_date", "r") as file:
-				for line in file:
-					line = json.loads(line)
-					self.timestamp = line["time"]
-					print(self.timestamp)
-		except Exception as e:
-			print(e)
-			print("inside except")
-			pass
+    def __init__(self) -> None:
+        self.timestamp = 0
+        self.config = open("/home/pi/catkin_ws/src/water_dron/config/config.json")
+        self.current_date = str(datetime.datetime.now().strftime("%Y_%m_%d"))
 
-	def _parse(self):
-		#print(self.timestamp)
+    def pin_file_to_pinata(self, file_path: str) -> str:
+        pinata_api = self.config["pinata"]["api"]
+        pinata_secret = self.config["pinata"]["secret"]
+        if pinata_secret:
+            try:
+                rospy.loginfo("Pinning file to Pinata")
+                pinata = PinataPy(pinata_api, pinata_secret)
+                pinata.pin_file_to_ipfs(file_path)
+                hash = pinata.pin_list()["rows"][0]["ipfs_pin_hash"]
+                rospy.loginfo(f"File sent to pinata. Hash is {hash}")
+                return hash
+            except requests.exceptions.ConnectionError as e:
+                rospy.logwarn(f"Failed while pining file to Pinata. Error: {e}")
+                return
+            except Exception as e:
+                return
 
-		try:
-			with open("/home/ubuntu/data/gps-sensors.json", "r") as file:
-				for data in file:
-					if data[0] != "{":
-						continue
-					data = json.loads(data)
-					key = drone()['SECRET']
-					dir = drone()['DIR']
+    def _parse(self) -> None:
+        list_of_files = glob.glob(f"/home/pi/data/{self.current_date}/*")
+        latest_file = max(list_of_files, key=os.path.getctime)
+        for file_path in list_of_files:
+            if file_path != latest_file:  # the latest can be modified right now
+                hash = self.pin_file_to_pinata(file_path)
+                if hash:
+                    interface = RI.RobonomicsInterface(
+                        seed=self.config["robonomics"]["seed"]
+                    )
+                    try:
+                        robonomics_receipt = interface.record_datalog(hash)
+                        rospy.loginfo(
+                            f"Ipfs hash sent to Robonomics Parachain and included in block {robonomics_receipt}"
+                        )
+                        os.replace(
+                            file_path,
+                            f"/home/pi/data/{self.current_date}/sent/{file_path.split('/')[-1]}",
+                        )
 
-					if "time" in data.keys():
-						if int(data["time"]) > self.timestamp:
-							program = f"echo '{data}' | {dir}robonomics io write datalog --remote wss://substrate.ipci.io -s {key}"
-							#program = "echo " + str(data) + " | " + dir + "robonomics io write datalog -s " + key
-							process_robonomics = subprocess.Popen(program, shell=True, stdout=subprocess.PIPE)
-							output = process_robonomics.stdout.readline()
-							self.timestamp = int(data["time"])
-							#time.sleep(2)
-							with open("/home/ubuntu/catkin_ws/src/water_drone/config/last_date", "w") as cash:
-								json.dump(data, cash)
-								print("data sent")
-								#cash.write(json.dumps(data))
-							print(f'Data sent to DAO IPCI {output.strip()}')
-					elif int(data["timestamp"]) > self.timestamp:
-						print(f'fromdate {data["timestamp"]}')
-						print(f'old time {self.timestamp}')
-						self.timestamp = int(data["timestamp"])
-						date = data["date"]
-						program = f"echo '{date}' | {dir}robonomics io write datalog --remote wss://substrate.ipci.io -s {key}"
-						process_robonomics = subprocess.Popen(program, shell=True, stdout=subprocess.PIPE)
+                    except Exception as e:
+                        rospy.logwarn(f"Failed to send hash to Robonomics with: {e}")
+                        time.sleep(10)
 
-		except Exception as e:
-			rospy.logerr(f'error: {e}')
-			rospy.loginfo('after e')
-			time.sleep(2)
-
-	def _check_connection(self):
-		while True:
-			process = subprocess.Popen("iwconfig", stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-			networks = str(process.communicate())
-			essid = networks.find("ESSID") + 6
-			essid_end = networks.find("Mode") - 14
-			if networks[essid:essid_end] != 'off/any':
-				self._parse()
 
 sender = Sender()
-sender._check_connection()
-
