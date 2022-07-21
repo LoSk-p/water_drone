@@ -16,6 +16,7 @@ class GetSensors:
 		self.last_time = 0
 		self.lat = 0
 		self.lon = 0
+		self.data_json = {}
 
 	def callback_gps(self, data: NavSatFix) -> None:
 		self.data_json["time"] = data.header.stamp.secs
@@ -23,7 +24,6 @@ class GetSensors:
 		self.data_json["Lon"] = data.longitude
 
 	def callback_sensors(self, data: SensorData) -> None:
-		self.data_json = {}
 		if data.pH != "None":
 			ions_data = False
 			self.data_json["temperatura"] = data.temperature
@@ -31,7 +31,7 @@ class GetSensors:
 			self.data_json["conductivity"] = data.conductivity
 			self.data_json["ORP"] = data.ORP
 		else:
-			iona_data = True
+			ions_data = True
 			self.data_json["temperatura"] = data.temperature
 			self.data_json["NO2"] = data.NO2
 			self.data_json["NO3"] = data.NO3

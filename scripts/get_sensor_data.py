@@ -31,6 +31,8 @@ class WaspmoteSensors:
         self.data_msg.NH4 = data["NH4"]
 
     def create_folder(self) -> None:
+        if not (os.path.isdir(f"/home/pi/data")):
+            os.mkdir(f"/home/pi/data")
         if not (os.path.isdir(f"/home/pi/data/{self.current_date}")):
             os.mkdir(f"/home/pi/data/{self.current_date}")
             os.mkdir(f"/home/pi/data/{self.current_date}/sent")
