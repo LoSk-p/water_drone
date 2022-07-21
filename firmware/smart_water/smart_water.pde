@@ -43,11 +43,16 @@ char node_ID[] = "WATER";
 // Point 2 of the calibration 
 #define point2_cal 12289.9375000000
 
+// ORP sensor calibration
+#define calibration_offset 0.0
+
 pHClass pHSensor;
 DOClass DOSensor;
 conductivityClass ConductivitySensor;
 pt1000Class TemperatureSensor;
+ORPClass ORPSensor;
 
+float ORPValue;
 float value_temp;
 float value_pH;
 float value_pH_calculated;
@@ -108,6 +113,8 @@ void loop()
   Water.ON();
   delay(1900);
 
+  ORPValue = ORPSensor.readORP();
+  ORPValue = ORPValue - calibration_offset;
   value_temp = TemperatureSensor.readTemperature();
   value_pH = pHSensor.readpH();
   value_pH_calculated = pHSensor.pHConversion(value_pH, value_temp); // temperature correction
@@ -120,6 +127,7 @@ void loop()
   frame.addSensor(SENSOR_WATER_WT, value_temp); // toC
   frame.addSensor(SENSOR_WATER_PH, value_pH_calculated); // 0-14
   frame.addSensor(SENSOR_WATER_COND, value_cond_calculated); // muS/cm
+  frame.addSensor(SENSOR_WATER_ORP, ORPValue);
   frame.addSensor(SENSOR_STR, RTC.getTime());
 
   SD.appendln(filename, (char*) frame.buffer);

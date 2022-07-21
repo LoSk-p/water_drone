@@ -9,7 +9,7 @@ import datetime
 class GetSensors:
 	def __init__(self):
 		rospy.init_node("write_file", anonymous=True)
-		self.data_json = {'time': 0, 'Lat': 0, 'Lon': 0, 'temp': 0, 'pH': 0, 'cond': 0}
+		self.data_json = {}
 		self.current_date = str(datetime.datetime.now().strftime("%Y_%m_%d"))
 		self.data_gps = None
 		self.data_sensors = None
