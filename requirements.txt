@@ -1,0 +1,2 @@
+pinatapy-vourhey==0.1.6
+robonomics-interface==1.1.0
