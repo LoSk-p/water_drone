@@ -13,7 +13,7 @@ import os
 class Sender:
     def __init__(self) -> None:
         self.timestamp = 0
-        self.config = open("/home/pi/catkin_ws/src/water_dron/config/config.json")
+        self.config = open("/home/pi/catkin_ws/src/water_drone/config/config.json")
         self.current_date = str(datetime.datetime.now().strftime("%Y_%m_%d"))
 
     def pin_file_to_pinata(self, file_path: str) -> str:
