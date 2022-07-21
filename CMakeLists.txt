@@ -163,7 +163,7 @@ include_directories(
 ## in contrast to setup.py, you can choose the destination
  catkin_install_python(PROGRAMS
    scripts/get_sensor_data.py
-   scripts/get_gps.py
+   scripts/write_file.py
    scripts/http_feeder.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
