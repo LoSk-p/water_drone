@@ -57,9 +57,9 @@ class WaspmoteSensors:
                 "NH4": "None",
             }
             if time.time() - self.last_time > self.interval:
-                f = open(f"/home/pi/data/{self.current_date}/{time.time()}", "w")
+                f = open(f"/home/pi/data/{self.current_date}/sensors_data/{time.time()}", "w")
             else:
-                list_of_files = glob.glob(f"/home/pi/data/{self.current_date}/*")
+                list_of_files = glob.glob(f"/home/pi/data/{self.current_date}/sensors_data/*")
                 latest_file = max(list_of_files, key=os.path.getctime)
                 self.last_time = time.time()
                 f = open(latest_file, "a")
