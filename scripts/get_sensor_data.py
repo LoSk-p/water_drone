@@ -57,9 +57,13 @@ class WaspmoteSensors:
                 "NH4": "None",
             }
             if time.time() - self.last_time > self.interval:
-                f = open(f"/home/pi/data/{self.current_date}/sensors_data/{time.time()}", "w")
+                f = open(
+                    f"/home/pi/data/{self.current_date}/sensors_data/{time.time()}", "w"
+                )
             else:
-                list_of_files = glob.glob(f"/home/pi/data/{self.current_date}/sensors_data/*")
+                list_of_files = glob.glob(
+                    f"/home/pi/data/{self.current_date}/sensors_data/*"
+                )
                 latest_file = max(list_of_files, key=os.path.getctime)
                 self.last_time = time.time()
                 f = open(latest_file, "a")
@@ -86,9 +90,9 @@ class WaspmoteSensors:
                     data_time = data.copy()
                     data_time["time"] = time.time()
                     f.write(f"{data_time}\n")
-                    f.flush()
                     f.close()
                     self.get_msg_data(data)
                     pub.publish(self.data_msg)
+
 
 WaspmoteSensors().publish_data()
