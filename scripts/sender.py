@@ -36,17 +36,16 @@ class Sender:
     def _parse(self) -> None:
         list_of_files = glob.glob(f"/home/pi/data/{self.current_date}/*")
         latest_file = max(list_of_files, key=os.path.getctime)
+        account = RI.Account(seed=self.config["robonomics"]["seed"])
         for file_path in list_of_files:
             if file_path != latest_file:  # the latest can be modified right now
                 hash = self.pin_file_to_pinata(file_path)
                 if hash:
-                    interface = RI.RobonomicsInterface(
-                        seed=self.config["robonomics"]["seed"]
-                    )
                     try:
-                        robonomics_receipt = interface.record_datalog(hash)
+                        datalog = RI.Datalog(account)
+                        transaction_hash = datalog.record(hash)
                         rospy.loginfo(
-                            f"Ipfs hash sent to Robonomics Parachain and included in block {robonomics_receipt}"
+                            f"Ipfs hash sent to Robonomics Parachain and included in block {transaction_hash}"
                         )
                         os.replace(
                             file_path,
