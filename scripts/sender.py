@@ -8,44 +8,50 @@ import glob
 from pinatapy import PinataPy
 import robonomicsinterface as RI
 import os
-
+from std_msgs.msg import String
+import json
 
 class Sender:
     def __init__(self) -> None:
         self.timestamp = 0
-        self.config = open("/home/pi/catkin_ws/src/water_drone/config/config.json")
+        with open("/home/pi/catkin_ws/src/water_drone/config/config.json", "r") as f:
+            self.config = json.load(f)
         self.current_date = str(datetime.datetime.now().strftime("%Y_%m_%d"))
+        rospy.loginfo(f"Sender is ready. Current date {self.current_date}")
+        rospy.init_node("sender", anonymous=True)
+        rospy.Subscriber("/new_file", String, self._parse)
+        rospy.spin()
 
     def pin_file_to_pinata(self, file_path: str) -> str:
         pinata_api = self.config["pinata"]["api"]
         pinata_secret = self.config["pinata"]["secret"]
         if pinata_secret:
             try:
-                rospy.loginfo("Pinning file to Pinata")
+                rospy.loginfo(f"Pinning file {file_path} to Pinata")
                 pinata = PinataPy(pinata_api, pinata_secret)
                 pinata.pin_file_to_ipfs(file_path)
-                hash = pinata.pin_list()["rows"][0]["ipfs_pin_hash"]
-                rospy.loginfo(f"File sent to pinata. Hash is {hash}")
-                return hash
+                ipfs_hash = pinata.pin_list()["rows"][0]["ipfs_pin_hash"]
+                rospy.loginfo(f"File sent to pinata. Hash is {ipfs_hash}")
+                return ipfs_hash
             except requests.exceptions.ConnectionError as e:
-                rospy.logwarn(f"Failed while pining file to Pinata. Error: {e}")
-                return
+                rospy.logerr(f"Failed while pining file to Pinata. Error: {e}")
+                return "No internet"
             except Exception as e:
                 return
 
-    def _parse(self) -> None:
-        list_of_files = glob.glob(f"/home/pi/data/{self.current_date}/*")
+    def _parse(self, from_topic) -> None:
+        list_of_files = glob.glob(f"/home/pi/data/{self.current_date}/*.json")
         latest_file = max(list_of_files, key=os.path.getctime)
         account = RI.Account(seed=self.config["robonomics"]["seed"])
         for file_path in list_of_files:
             if file_path != latest_file:  # the latest can be modified right now
-                hash = self.pin_file_to_pinata(file_path)
-                if hash:
+                ipfs_hash = self.pin_file_to_pinata(file_path)
+                if ipfs_hash and (ipfs_hash != "No internet"):
                     try:
                         datalog = RI.Datalog(account)
-                        transaction_hash = datalog.record(hash)
+                        transaction_hash = datalog.record(ipfs_hash)
                         rospy.loginfo(
-                            f"Ipfs hash sent to Robonomics Parachain and included in block {transaction_hash}"
+                            f"Ipfs hash sent to Robonomics Parachain. Transaction hash is: {transaction_hash}"
                         )
                         os.replace(
                             file_path,
@@ -53,8 +59,10 @@ class Sender:
                         )
 
                     except Exception as e:
-                        rospy.logwarn(f"Failed to send hash to Robonomics with: {e}")
+                        rospy.logerr(f"Failed to send hash to Robonomics with: {e}")
                         time.sleep(10)
+                else:
+                    return
 
 
 sender = Sender()

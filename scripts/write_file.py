@@ -2,54 +2,79 @@
 import rospy
 from sensor_msgs.msg import NavSatFix
 from water_drone.msg import SensorData
+from std_msgs.msg import String
 import json
 import datetime
 import time
 import glob
 import os
+from uuid import getnode as get_mac
+import hashlib
+
+def _generate_pubkey(id: str) -> str:
+    verify_key = hashlib.sha256(id.encode("utf-8"))
+    verify_key_hex = verify_key.hexdigest()
+    return str(verify_key_hex)
 
 class GetSensors:
 	def __init__(self) -> None:
 		rospy.init_node("write_file", anonymous=True)
 		self.current_date = str(datetime.datetime.now().strftime("%Y_%m_%d"))
-		self.interval = 10 * 60  # 10 min, how often to create new file
+		with open("/home/pi/catkin_ws/src/water_drone/config/config.json", "r") as f:
+			self.config = json.load(f)
+		self.interval = self.config["general"]["interval"] 
 		self.last_time = 0
 		self.lat = 0
 		self.lon = 0
 		self.data_json = {}
+		self.measurements = {}
+		self.model = 3
+		self.mac = get_mac()
+		rospy.loginfo(f"Write file is ready. Current data {self.current_date}")
+		self.pub = rospy.Publisher("new_file", String, queue_size=10)
 
 	def callback_gps(self, data: NavSatFix) -> None:
-		self.data_json["time"] = data.header.stamp.secs
+		self.data_json["timestamp"] = data.header.stamp.secs
 		self.data_json["Lat"] = data.latitude
 		self.data_json["Lon"] = data.longitude
 
 	def callback_sensors(self, data: SensorData) -> None:
 		if data.pH != "None":
 			ions_data = False
-			self.data_json["temperatura"] = data.temperature
-			self.data_json["pH"] = data.pH
-			self.data_json["conductivity"] = data.conductivity
-			self.data_json["ORP"] = data.ORP
+			self.measurements["temperatura"] = data.temperature
+			self.measurements["pH"] = data.pH
+			self.measurements["conductivity"] = data.conductivity
+			self.measurements["ORP"] = data.ORP
 		else:
 			ions_data = True
-			self.data_json["temperatura"] = data.temperature
-			self.data_json["NO2"] = data.NO2
-			self.data_json["NO3"] = data.NO3
-			self.data_json["NH4"] = data.NH4
+			self.measurements["temperatura"] = data.temperature
+			self.measurements["NO2"] = data.NO2
+			self.measurements["NO3"] = data.NO3
+			self.measurements["NH4"] = data.NH4
 		if ions_data:
 			file_prefix = "ions"
 		else:
 			file_prefix = "water"
+		
 		if time.time() - self.last_time > self.interval:
-			f = open(f"/home/pi/data/{self.current_date}/{file_prefix}_{time.time()}", "w")
-		else:
-			list_of_files = glob.glob(f"/home/pi/data/{self.current_date}/*")
-			latest_file = max(list_of_files, key=os.path.getctime)
+			rospy.loginfo("in if new file writing")
+			filename = f"/home/pi/data/{self.current_date}/{file_prefix}_{time.time()}.json"
+			f = open(filename, "w")
+			self.pub.publish(f"New file {filename}")
 			self.last_time = time.time()
+		else:
+			list_of_files = glob.glob(f"/home/pi/data/{self.current_date}/*.json")
+			latest_file = max(list_of_files, key=os.path.getctime)
 			f = open(latest_file, "a")
-		json.dump(self.data_json, f)
-		f.write("\n")
-		f.close()
+		if "timestamp" in self.data_json:
+			public_address = _generate_pubkey(str(self.mac))
+			self.measurements["timestamp"] = self.data_json["timestamp"]
+			measurmnet_format_data = {"Public": public_address, "model": self.model, "geo": (self.data_json["Lat"],self.data_json["Lon"]), "measurements": self.measurements}
+			json.dump(measurmnet_format_data, f)
+			f.write("\n")
+			f.close()
+		else:
+			return
 
 	def write_file(self) -> None:
 		rospy.Subscriber("/sensor_data", SensorData, self.callback_sensors)
