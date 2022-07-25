@@ -17,7 +17,7 @@ class WaspmoteSensors:
         self.data_msg = None
         with open("/home/pi/catkin_ws/src/water_drone/config/config.json", "r") as f:
             self.config = json.load(f)
-        self.interval = self.config["general"]["interval"] * 60  #how often to create new file
+        self.interval = self.config["general"]["interval"]  #how often to create new file
         self.last_time = 0
         self.current_date = str(datetime.datetime.now().strftime("%Y_%m_%d"))
         self.create_folder()
