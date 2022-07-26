@@ -91,7 +91,7 @@ int count = 0;
 void create_file(int dop)
 {
   int32_t files_number = SD.numFiles() + dop;
-  snprintf(filename, sizeof(filename), "IONS%d.TXT", files_number);
+  snprintf(filename, sizeof(filename), "ION%d.TXT", files_number);
   sd_answer = SD.create(filename);
   if( sd_answer == 1 )
   {

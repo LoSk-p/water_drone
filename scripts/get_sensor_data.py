@@ -3,6 +3,7 @@
 import rospy
 import serial
 from std_msgs.msg import String
+from mavros_msgs.msg import State
 import time
 import os
 import datetime
@@ -21,8 +22,15 @@ class WaspmoteSensors:
         self.last_time = 0
         self.current_date = str(datetime.datetime.now().strftime("%Y_%m_%d"))
         self.create_folder()
+        self.is_armed = False
         rospy.init_node("waspmote_sensors", anonymous=True)
         rospy.loginfo(f"Get sensors is ready. Current data {self.current_date}")
+        rospy.Subscriber("/mavros/state", State, self.get_state)
+
+    def get_state(self, data):
+        if self.is_armed != data.armed:
+            rospy.loginfo(f"WASMPOTE_SENSORS NODE: Armed changed: {data.armed}")
+        self.is_armed = data.armed
 
     def get_msg_data(self, data) -> None:
         self.data_msg = SensorData()
@@ -64,41 +72,42 @@ class WaspmoteSensors:
                 "NO3": "None",
                 "NH4": "None",
             }
-            if time.time() - self.last_time > self.interval:
-                rospy.loginfo("in if new file get_sensor")
-                f = open(
-                    f"/home/pi/data/{self.current_date}/sensors_data/{time.time()}.json", "w"
-                )
-                self.last_time = time.time()
-            else:
-                list_of_files = glob.glob(
-                    f"/home/pi/data/{self.current_date}/sensors_data/*.json"
-                )
-                latest_file = max(list_of_files, key=os.path.getctime)
-                f = open(latest_file, "a")
             if ser.inWaiting() > 0:
                 data_read = str(ser.readline())
-                data_prev = data_read[2:]
-                rospy.loginfo(f"Sensors data: {data_prev}")
-                if data_prev[0] == "<":
-                    data_prev = data_prev.split("#")
-                    if data_prev[2] == "WATER":
-                        data["temperature"] = data_prev[4].split(":")[1]
-                        data["pH"] = data_prev[5].split(":")[1]
-                        data["conductivity"] = data_prev[6].split(":")[1]
-                        data["ORP"] = data_prev[7].split(":")[1]
+                if self.is_armed:
+                    if time.time() - self.last_time > self.interval:
+                        rospy.loginfo("in if new file get_sensor")
+                        f = open(
+                            f"/home/pi/data/{self.current_date}/sensors_data/{time.time()}.json", "w"
+                        )
+                        self.last_time = time.time()
                     else:
-                        data["temperature"] = data_prev[7].split(":")[1]
-                        data["NO2"] = data_prev[4].split(":")[1]
-                        data["NO3"] = data_prev[5].split(":")[1]
-                        data["NH4"] = data_prev[6].split(":")[1]
-                    rospy.loginfo(f"JSON sensor data: {data}")
-                    data_time = data.copy()
-                    data_time["time"] = time.time()
-                    f.write(f"{data_time}\n")
-                    f.close()
-                    self.get_msg_data(data)
-                    pub.publish(self.data_msg)
+                        list_of_files = glob.glob(
+                            f"/home/pi/data/{self.current_date}/sensors_data/*.json"
+                        )
+                        latest_file = max(list_of_files, key=os.path.getctime)
+                        f = open(latest_file, "a")
+                    data_prev = data_read[2:]
+                    rospy.loginfo(f"Sensors data: {data_prev}")
+                    if data_prev[0] == "<":
+                        data_prev = data_prev.split("#")
+                        if data_prev[2] == "WATER":
+                            data["temperature"] = data_prev[4].split(":")[1]
+                            data["pH"] = data_prev[5].split(":")[1]
+                            data["conductivity"] = data_prev[6].split(":")[1]
+                            data["ORP"] = data_prev[7].split(":")[1]
+                        else:
+                            data["temperature"] = data_prev[7].split(":")[1]
+                            data["NO2"] = data_prev[4].split(":")[1]
+                            data["NO3"] = data_prev[5].split(":")[1]
+                            data["NH4"] = data_prev[6].split(":")[1]
+                        rospy.loginfo(f"JSON sensor data: {data}")
+                        data_time = data.copy()
+                        data_time["time"] = time.time()
+                        f.write(f"{data_time}\n")
+                        f.close()
+                        self.get_msg_data(data)
+                        pub.publish(self.data_msg)
 
 
 WaspmoteSensors().publish_data()

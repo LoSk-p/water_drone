@@ -9,6 +9,7 @@ from pinatapy import PinataPy
 import robonomicsinterface as RI
 import os
 from std_msgs.msg import String
+from mavros_msgs.msg import State
 import json
 
 class Sender:
@@ -17,10 +18,18 @@ class Sender:
         with open("/home/pi/catkin_ws/src/water_drone/config/config.json", "r") as f:
             self.config = json.load(f)
         self.current_date = str(datetime.datetime.now().strftime("%Y_%m_%d"))
+        rospy.loginfo("here")
+        self.is_armed = False
         rospy.loginfo(f"Sender is ready. Current date {self.current_date}")
         rospy.init_node("sender", anonymous=True)
         rospy.Subscriber("/new_file", String, self._parse)
+        rospy.Subscriber("/mavros/state", State, self.get_state)
         rospy.spin()
+
+    def get_state(self, data):
+        if self.is_armed != data.armed:
+            rospy.loginfo(f"DATA_SENDER NODE: Armed changed: {data.armed}")
+        self.is_armed = data.armed
 
     def pin_file_to_pinata(self, file_path: str) -> str:
         pinata_api = self.config["pinata"]["api"]
@@ -40,29 +49,30 @@ class Sender:
                 return
 
     def _parse(self, from_topic) -> None:
-        list_of_files = glob.glob(f"/home/pi/data/{self.current_date}/*.json")
-        latest_file = max(list_of_files, key=os.path.getctime)
-        account = RI.Account(seed=self.config["robonomics"]["seed"])
-        for file_path in list_of_files:
-            if file_path != latest_file:  # the latest can be modified right now
-                ipfs_hash = self.pin_file_to_pinata(file_path)
-                if ipfs_hash and (ipfs_hash != "No internet"):
-                    try:
-                        datalog = RI.Datalog(account)
-                        transaction_hash = datalog.record(ipfs_hash)
-                        rospy.loginfo(
-                            f"Ipfs hash sent to Robonomics Parachain. Transaction hash is: {transaction_hash}"
-                        )
-                        os.replace(
-                            file_path,
-                            f"/home/pi/data/{self.current_date}/sent/{file_path.split('/')[-1]}",
-                        )
+        if self.is_armed:
+            list_of_files = glob.glob(f"/home/pi/data/{self.current_date}/*.json")
+            latest_file = max(list_of_files, key=os.path.getctime)
+            account = RI.Account(seed=self.config["robonomics"]["seed"])
+            for file_path in list_of_files:
+                if file_path != latest_file:  # the latest can be modified right now
+                    ipfs_hash = self.pin_file_to_pinata(file_path)
+                    if ipfs_hash and (ipfs_hash != "No internet"):
+                        try:
+                            datalog = RI.Datalog(account)
+                            transaction_hash = datalog.record(ipfs_hash)
+                            rospy.loginfo(
+                                f"Ipfs hash sent to Robonomics Parachain. Transaction hash is: {transaction_hash}"
+                            )
+                            os.replace(
+                                file_path,
+                                f"/home/pi/data/{self.current_date}/sent/{file_path.split('/')[-1]}",
+                            )
 
-                    except Exception as e:
-                        rospy.logerr(f"Failed to send hash to Robonomics with: {e}")
-                        time.sleep(10)
-                else:
-                    return
+                        except Exception as e:
+                            rospy.logerr(f"Failed to send hash to Robonomics with: {e}")
+                            time.sleep(10)
+                    else:
+                        return
 
 
 sender = Sender()

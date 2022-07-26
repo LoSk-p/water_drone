@@ -73,7 +73,7 @@ int count = 0;
 void create_file(int dop)
 {
   int32_t files_number = SD.numFiles() + dop;
-  snprintf(filename, sizeof(filename), "WHATER%d.TXT", files_number);
+  snprintf(filename, sizeof(filename), "W%d.TXT", files_number);
   sd_answer = SD.create(filename);
   if( sd_answer == 1 )
   {
