@@ -27,21 +27,24 @@
 char node_ID[] = "WATER";
 
 // pH Sensor calibration values
-#define cal_point_10 1.987 // at 27.980 toC
-#define cal_point_7 2.083 // at 28.167 toC
-#define cal_point_4 2.201 // at 28.135 toC
-#define cal_temp 25.963 // Temperature at which calibration was carried out
+// Calibration values
+#define cal_point_10  2.0159
+#define cal_point_7   2.083425
+#define cal_point_4   2.241
+
+// Temperature at which calibration was carried out
+#define cal_temp 28.712
 
 // Conductivity Sensor calibration values
 // Value 1 used to calibrate the sensor
-#define point1_cond 1.413
+#define point1_cond 1413
 // Value 2 used to calibrate the sensor
 #define point2_cond 84
 
 // Point 1 of the calibration 
-#define point1_cal 914.3067016601
+#define point1_cal 15977.734
 // Point 2 of the calibration 
-#define point2_cal 12289.9375000000
+#define point2_cal 819.8077
 
 // ORP sensor calibration
 #define calibration_offset 0.0
