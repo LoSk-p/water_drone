@@ -38,7 +38,7 @@ class Sender:
             try:
                 rospy.loginfo(f"Pinning file {file_path} to Pinata")
                 pinata = PinataPy(pinata_api, pinata_secret)
-                pinata.pin_file_to_ipfs(file_path)
+                pinata.pin_file_to_ipfs(file_path, save_absolute_paths=False)
                 ipfs_hash = pinata.pin_list()["rows"][0]["ipfs_pin_hash"]
                 rospy.loginfo(f"File sent to pinata. Hash is {ipfs_hash}")
                 return ipfs_hash
