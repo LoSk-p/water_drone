@@ -47,23 +47,32 @@ pt1000Class tempSensor;
 #define point2 100.0
 #define point3 1000.0
 //======================================================================
-// Calibration voltage values for Calcium sensor
+// Calibration voltage values for NO2 sensor
 //======================================================================
-#define point1_volt_NO2 2.163
-#define point2_volt_NO2 2.296
-#define point3_volt_NO2 2.425
+#define point1_volt_NO2 2.647
+#define point2_volt_NO2 2.495
+#define point3_volt_NO2 2.434
 //======================================================================
 // Calibration voltage values for NO3 sensor
 //======================================================================
-#define point1_volt_NO3 3.080
-#define point2_volt_NO3 2.900
-#define point3_volt_NO3 2.671
+#define point1_volt_NO3 2.449
+#define point2_volt_NO3 2.515
+#define point3_volt_NO3 2.543
 //======================================================================
-// Calibration voltage values for Fluor sensor
+// Calibration voltage values for NH4 sensor
 //======================================================================
-#define point1_volt_NH4 3.115
-#define point2_volt_NH4 2.834
-#define point3_volt_NH4 2.557
+// points
+#define point1_NH4 4.0
+#define point2_NH4 20.0
+#define point3_NH4 40.0
+
+const float concentrations_NH4[] = { 
+  point1_NH4, point2_NH4, point3_NH4 };
+
+// voltages
+#define point1_volt_NH4 2.275
+#define point2_volt_NH4 2.436
+#define point3_volt_NH4 2.491
 //======================================================================
 // Define the number of calibration points
 //======================================================================
@@ -117,12 +126,12 @@ void setup()
   SD.ON();
   create_file(0);
 
-  // Calibrate the Calcium sensor
+  // Calibrate the NO2 sensor
   NO2_Sensor.setCalibrationPoints(voltages_NO2, concentrations, NUM_POINTS); 
   // Calibrate the NO3 sensor
   NO3_Sensor.setCalibrationPoints(voltages_NO3, concentrations, NUM_POINTS);  
-  // Calibrate the Fluoride sensor
-  NH4_Sensor.setCalibrationPoints(voltages_NH4, concentrations, NUM_POINTS);  
+  // Calibrate the NH4 sensor
+  NH4_Sensor.setCalibrationPoints(voltages_NH4, concentrations_NH4, NUM_POINTS);  
 
   RTC.ON();
   // Setting time [yy:mm:dd:dow:hh:mm:ss]
