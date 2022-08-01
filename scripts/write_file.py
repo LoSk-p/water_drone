@@ -92,12 +92,13 @@ class GetSensors:
                 self.measurement["timestamp"] = self.data_json["timestamp"]
                 self.measurement["geo"] = (self.data_json["Lat"], self.data_json["Lon"])
                 measurmnet_format_data = {
-                    "Public": public_address,
-                    "model": MODEL,
-                    "measurements": [self.measurement],
+                    public_address: {
+                        "model": MODEL,
+                        "measurements": [self.measurement],
+                    }
                 }
                 if dict_from_file:
-                    dict_from_file["measurements"].append(self.measurement)
+                    dict_from_file[public_address]["measurements"].append(self.measurement)
                 else:
                     dict_from_file.update(measurmnet_format_data)
                 json.dump(dict_from_file, f)
@@ -109,7 +110,8 @@ class GetSensors:
     def write_file(self) -> None:
         rospy.Subscriber("/sensor_data", SensorData, self.callback_sensors)
         rospy.Subscriber("/mavros/global_position/global", NavSatFix, self.callback_gps)
-        rospy.spin()
+        while not rospy.is_shutdown():
+            pass
 
 
 if __name__ == "__main__":
