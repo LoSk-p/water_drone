@@ -55,9 +55,9 @@ pt1000Class tempSensor;
 //======================================================================
 // Calibration voltage values for NO3 sensor
 //======================================================================
-#define point1_volt_NO3 2.449
-#define point2_volt_NO3 2.515
-#define point3_volt_NO3 2.543
+#define point1_volt_NO3 2.701
+#define point2_volt_NO3 2.678
+#define point3_volt_NO3 2.545
 //======================================================================
 // Calibration voltage values for NH4 sensor
 //======================================================================
