@@ -49,9 +49,9 @@ pt1000Class tempSensor;
 //======================================================================
 // Calibration voltage values for NO2 sensor
 //======================================================================
-#define point1_volt_NO2 2.647
-#define point2_volt_NO2 2.495
-#define point3_volt_NO2 2.434
+#define point1_volt_NO2 2.801
+#define point2_volt_NO2 2.729
+#define point3_volt_NO2 2.590
 //======================================================================
 // Calibration voltage values for NO3 sensor
 //======================================================================
@@ -70,9 +70,9 @@ const float concentrations_NH4[] = {
   point1_NH4, point2_NH4, point3_NH4 };
 
 // voltages
-#define point1_volt_NH4 2.275
-#define point2_volt_NH4 2.436
-#define point3_volt_NH4 2.491
+#define point1_volt_NH4 2.526
+#define point2_volt_NH4 2.722
+#define point3_volt_NH4 2.816
 //======================================================================
 // Define the number of calibration points
 //======================================================================
