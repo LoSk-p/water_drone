@@ -42,9 +42,9 @@ char node_ID[] = "WATER";
 #define point2_cond 84
 
 // Point 1 of the calibration 
-#define point1_cal 821
+#define point1_cal 845
 // Point 2 of the calibration 
-#define point2_cal 12240
+#define point2_cal 11857
 
 // ORP sensor calibration
 #define calibration_offset 0.0

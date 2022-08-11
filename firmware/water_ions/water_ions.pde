@@ -36,9 +36,9 @@ char node_ID[] = "IONS";
 //======================================================================
 // Plug&Sense SOCKETS
 //====================================================================== 
-ionSensorClass NO2_Sensor(SOCKET_A);
+ionSensorClass NO2_Sensor(SOCKET_C);
 ionSensorClass NO3_Sensor(SOCKET_B);
-ionSensorClass NH4_Sensor(SOCKET_C);
+ionSensorClass NH4_Sensor(SOCKET_A);
 pt1000Class tempSensor;
 //======================================================================
 // Calibration concentrations solutions used in the process
@@ -49,8 +49,8 @@ pt1000Class tempSensor;
 //======================================================================
 // Calibration voltage values for NO2 sensor
 //======================================================================
-#define point1_volt_NO2 2.801
-#define point2_volt_NO2 2.729
+#define point1_volt_NO2 2.615
+#define point2_volt_NO2 1.905
 #define point3_volt_NO2 2.590
 //======================================================================
 // Calibration voltage values for NO3 sensor
@@ -155,6 +155,9 @@ void loop()
   float NO3_Volts = NO3_Sensor.read();
   float NO3_Value = NO3_Sensor.calculateConcentration(NO3_Volts);
   delay(100);
+  USB.print(F("NO3 or NO2: "));
+  USB.print(NO3_Volts);
+  USB.print(F("; "));
 
   //==========================================================
   // Read the NH4 sensor
@@ -162,6 +165,9 @@ void loop()
   float NH4_Volts = NH4_Sensor.read();
   float NH4_Value = NH4_Sensor.calculateConcentration(NH4_Volts);
   delay(100);
+  USB.print(F("NH4: "));
+  USB.print(NH4_Volts);
+  USB.println(F("; "));
 
   //==========================================================
   // Read the Temperature sensor
@@ -185,4 +191,3 @@ void loop()
   USB.println((char*) frame.buffer);
   delay(1000); 
 }
-
