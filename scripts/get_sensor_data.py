@@ -99,7 +99,8 @@ class WaspmoteSensors:
                         else:
                             data["temperature"] = data_prev[7].split(":")[1]
                             data["NO2"] = data_prev[4].split(":")[1]
-                            data["NO3"] = data_prev[5].split(":")[1]
+                            data["NO3"] = "None"
+                            # data["NO3"] = data_prev[5].split(":")[1]
                             data["NH4"] = data_prev[6].split(":")[1]
                         rospy.loginfo(f"JSON sensor data: {data}")
                         data_time = data.copy()

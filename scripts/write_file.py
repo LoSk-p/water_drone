@@ -62,7 +62,7 @@ class GetSensors:
                 ions_data = True
                 self.measurement["temperature"] = data.temperature
                 self.measurement["NO2"] = data.NO2
-                self.measurement["NO3"] = data.NO3
+                # self.measurement["NO3"] = data.NO3
                 self.measurement["NH4"] = data.NH4
             if ions_data:
                 file_prefix = "ions"

@@ -49,9 +49,9 @@ pt1000Class tempSensor;
 //======================================================================
 // Calibration voltage values for NO2 sensor
 //======================================================================
-#define point1_volt_NO2 2.687
-#define point2_volt_NO2 2.615
-#define point3_volt_NO2 2.521
+#define point1_volt_NO2 2.655
+#define point2_volt_NO2 2.526
+#define point3_volt_NO2 2.433
 //======================================================================
 // Calibration voltage values for NO3 sensor
 //======================================================================
@@ -70,9 +70,9 @@ const float concentrations_NH4[] = {
   point1_NH4, point2_NH4, point3_NH4 };
 
 // voltages
-#define point1_volt_NH4 2.519
-#define point2_volt_NH4 2.733
-#define point3_volt_NH4 2.834
+#define point1_volt_NH4 2.507
+#define point2_volt_NH4 2.721
+#define point3_volt_NH4 2.819
 //======================================================================
 // Define the number of calibration points
 //======================================================================
@@ -147,17 +147,20 @@ void loop()
   float NO2_Volts = NO2_Sensor.read();
   float NO2_Value = NO2_Sensor.calculateConcentration(NO2_Volts);
   delay(100);
+  USB.print(F("NO2: "));
+  USB.print(NO2_Volts);
+  USB.print(F("; "));
 
 
   //==========================================================
   // Read the NO3 sensor
   //==========================================================
-  float NO3_Volts = NO3_Sensor.read();
-  float NO3_Value = NO3_Sensor.calculateConcentration(NO3_Volts);
-  delay(100);
-  USB.print(F("NO3 or NO2: "));
-  USB.print(NO3_Volts);
-  USB.print(F("; "));
+  // float NO3_Volts = NO3_Sensor.read();
+  // float NO3_Value = NO3_Sensor.calculateConcentration(NO3_Volts);
+  // delay(100);
+  // USB.print(F("NO3: "));
+  // USB.print(NO3_Volts);
+  // USB.print(F("; "));
 
   //==========================================================
   // Read the NH4 sensor
@@ -179,7 +182,7 @@ void loop()
 
   frame.createFrame(ASCII);
   frame.addSensor(SENSOR_IONS_NO2, NO2_Value);
-  frame.addSensor(SENSOR_IONS_NO3, NO3_Value);
+  // frame.addSensor(SENSOR_IONS_NO3, NO3_Value);
   frame.addSensor(SENSOR_IONS_NH4, NH4_Value);
   frame.addSensor(SENSOR_IN_TEMP, temp_Value);
   frame.addSensor(SENSOR_STR, RTC.getTime());
