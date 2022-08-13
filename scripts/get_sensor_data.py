@@ -9,6 +9,7 @@ import os
 import datetime
 import glob
 import json
+from sensor_msgs.msg import NavSatFix
 
 from water_drone.msg import SensorData
 
@@ -26,6 +27,12 @@ class WaspmoteSensors:
         rospy.init_node("waspmote_sensors", anonymous=True)
         rospy.loginfo(f"Get sensors is ready. Current data {self.current_date}")
         rospy.Subscriber("/mavros/state", State, self.get_state)
+        rospy.Subscriber("/mavros/global_position/global", NavSatFix, self.callback_gps)
+
+    def callback_gps(self, data):
+        self.lat = data.latitude
+        self.lon = data.longitude
+        self.timestamp = data.header.stamp.secs
 
     def get_state(self, data):
         if self.is_armed != data.armed:
@@ -64,6 +71,9 @@ class WaspmoteSensors:
         pub = rospy.Publisher("sensor_data", SensorData, queue_size=10)
         while not rospy.is_shutdown():
             data = {
+                "timestamp": "None",
+                "lat": "None",
+                "lon": "None",
                 "temperature": "None",
                 "pH": "None",
                 "conductivity": "None",
@@ -102,6 +112,9 @@ class WaspmoteSensors:
                             data["NO3"] = "None"
                             # data["NO3"] = data_prev[5].split(":")[1]
                             data["NH4"] = data_prev[6].split(":")[1]
+                        data["timestamp"] = self.timestamp
+                        data["lat"] = self.lat
+                        data["lon"] = self.lon
                         rospy.loginfo(f"JSON sensor data: {data}")
                         data_time = data.copy()
                         data_time["time"] = time.time()
