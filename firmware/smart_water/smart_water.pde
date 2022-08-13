@@ -50,7 +50,6 @@ char node_ID[] = "WATER";
 #define calibration_offset 0.0
 
 pHClass pHSensor;
-DOClass DOSensor;
 conductivityClass ConductivitySensor;
 pt1000Class TemperatureSensor;
 ORPClass ORPSensor;
@@ -59,48 +58,14 @@ float ORPValue;
 float value_temp;
 float value_pH;
 float value_pH_calculated;
-float value_do;
-float value_do_calculated;
 float value_cond;
 float value_cond_calculated;
 
-// define file name: MUST be 8.3 SHORT FILE NAME
-char filename[30]= {0};
-char text[40] = {0};
-// define variable
-uint8_t sd_answer;
-
-int count = 0;
-
-
-void create_file(int dop)
-{
-  int32_t files_number = SD.numFiles() + dop;
-  snprintf(filename, sizeof(filename), "W%d.TXT", files_number);
-  sd_answer = SD.create(filename);
-  if( sd_answer == 1 )
-  {
-    snprintf(text, sizeof(text),"file created %s", filename);
-    USB.println(text);
-  }
-  else 
-  {
-    USB.println(F("file NOT created"));  
-    dop++;
-    create_file(dop);
-  } 
-}
 
 void setup()
 {
   USB.ON();
   frame.setID(node_ID);
-
-  // Set SD ON
-  SD.ON();
-   // Delete file
-  //sd_answer = SD.del(filename);
-  create_file(0);
   
   // Configure the calibration values
   pHSensor.setCalibrationPoints(cal_point_10, cal_point_7, cal_point_4, cal_temp);
@@ -133,14 +98,9 @@ void loop()
   frame.addSensor(SENSOR_WATER_ORP, ORPValue);
   frame.addSensor(SENSOR_STR, RTC.getTime());
 
-  SD.appendln(filename, (char*) frame.buffer);
-  //SD.showFile(filename);
   delay(100);
   
-  count++;
-  //USB.println(count);
   USB.println((char*) frame.buffer);
-  //USB.println(RTC.getTime());
 }
 
 
