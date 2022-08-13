@@ -89,31 +89,6 @@ const float voltages_NH4[] = {
   point1_volt_NH4, point2_volt_NH4, point3_volt_NH4 }; 
 //======================================================================
 
-// define file name: MUST be 8.3 SHORT FILE NAME
-char filename[30]= {0};
-char text[40] = {0};
-// define variable
-uint8_t sd_answer;
-
-int count = 0;
-
-void create_file(int dop)
-{
-  int32_t files_number = SD.numFiles() + dop;
-  snprintf(filename, sizeof(filename), "ION%d.TXT", files_number);
-  sd_answer = SD.create(filename);
-  if( sd_answer == 1 )
-  {
-    snprintf(text, sizeof(text),"file created %s", filename);
-    USB.println(text);
-  }
-  else 
-  {
-    USB.println(F("file NOT created"));  
-    dop++;
-    create_file(dop);
-  } 
-}
 
 void setup()
 {
@@ -121,10 +96,6 @@ void setup()
   SWIonsBoard.ON();
   USB.ON(); 
   frame.setID(node_ID); 
-  
-  // Set SD ON
-  SD.ON();
-  create_file(0);
 
   // Calibrate the NO2 sensor
   NO2_Sensor.setCalibrationPoints(voltages_NO2, concentrations, NUM_POINTS); 
@@ -146,7 +117,7 @@ void loop()
   //==========================================================
   float NO2_Volts = NO2_Sensor.read();
   float NO2_Value = NO2_Sensor.calculateConcentration(NO2_Volts);
-  delay(100);
+  delay(10);
   USB.print(F("NO2: "));
   USB.print(NO2_Volts);
   USB.print(F("; "));
@@ -155,19 +126,19 @@ void loop()
   //==========================================================
   // Read the NO3 sensor
   //==========================================================
-  // float NO3_Volts = NO3_Sensor.read();
-  // float NO3_Value = NO3_Sensor.calculateConcentration(NO3_Volts);
-  // delay(100);
-  // USB.print(F("NO3: "));
-  // USB.print(NO3_Volts);
-  // USB.print(F("; "));
+  float NO3_Volts = NO3_Sensor.read();
+  float NO3_Value = NO3_Sensor.calculateConcentration(NO3_Volts);
+  delay(10);
+  USB.print(F("NO3: "));
+  USB.print(NO3_Volts);
+  USB.print(F("; "));
 
   //==========================================================
   // Read the NH4 sensor
   //==========================================================
   float NH4_Volts = NH4_Sensor.read();
   float NH4_Value = NH4_Sensor.calculateConcentration(NH4_Volts);
-  delay(100);
+  delay(10);
   USB.print(F("NH4: "));
   USB.print(NH4_Volts);
   USB.println(F("; "));
@@ -176,20 +147,16 @@ void loop()
   // Read the Temperature sensor
   //==========================================================
   float temp_Value = tempSensor.read();
-  delay(100);
+  delay(10);
 
   SWIonsBoard.OFF();
 
   frame.createFrame(ASCII);
   frame.addSensor(SENSOR_IONS_NO2, NO2_Value);
-  // frame.addSensor(SENSOR_IONS_NO3, NO3_Value);
+  frame.addSensor(SENSOR_IONS_NO3, NO3_Value);
   frame.addSensor(SENSOR_IONS_NH4, NH4_Value);
   frame.addSensor(SENSOR_IN_TEMP, temp_Value);
   frame.addSensor(SENSOR_STR, RTC.getTime());
-
-  SD.appendln(filename, (char*) frame.buffer);
-  delay(100);
-
 
   USB.println((char*) frame.buffer);
   delay(1000); 
