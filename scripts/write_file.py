@@ -60,7 +60,6 @@ class GetSensors:
         self.data_json = {}
         self.measurement = {}  # single measurement
         self.is_armed = False
-        self.mac = get_mac()
         rospy.loginfo(f"Write file is ready. Current data {self.current_date}")
         self.pub = rospy.Publisher("new_file", String, queue_size=10)
         rospy.Subscriber("/mavros/state", State, self.get_state)
@@ -68,6 +67,8 @@ class GetSensors:
     def get_state(self, data):
         if self.is_armed != data.armed:
             rospy.loginfo(f"WRITE FILE NODE: Armed changed: {data.armed}")
+            self.mac = f"{get_mac()}_{time.time()}"
+            rospy.loginfo(f" New mac: {self.mac}")
         self.is_armed = data.armed
 
     def callback_gps(self, data: NavSatFix) -> None:
@@ -129,8 +130,11 @@ class GetSensors:
                         "measurements": [self.measurement],
                     }
                 }
-                if dict_from_file:
-                    dict_from_file[public_address]["measurements"].append(self.measurement)
+                if public_address in dict_from_file:
+                    rospy.loginfo(f"in dict if add: {public_address}")
+                    dict_from_file[public_address]["measurements"].append(
+                        self.measurement
+                    )
                 else:
                     dict_from_file.update(measurmnet_format_data)
                 json.dump(dict_from_file, f)
