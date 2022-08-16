@@ -71,8 +71,8 @@ class GetSensors:
                 file_prefix = "water"
 
             if time.time() - self.last_time > self.interval:
-                rospy.loginfo("in if new file writing")
                 filename = f"/home/pi/data/{self.current_date}/{file_prefix}_{time.time()}.json"
+                rospy.loginfo(f"Creating new file: {filename}")
                 f = open(filename, "w")
                 self.pub.publish(f"New file {filename}")
                 self.last_time = time.time()
@@ -99,7 +99,6 @@ class GetSensors:
                     }
                 }
                 if public_address in dict_from_file:
-                    rospy.loginfo(f"in dict if add: {public_address}")
                     dict_from_file[public_address]["measurements"].append(
                         self.measurement
                     )
