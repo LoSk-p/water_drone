@@ -42,12 +42,12 @@ char node_ID[] = "WATER";
 #define point2_cond 84
 
 // Point 1 of the calibration 
-#define point1_cal 845
+#define point1_cal 822.6
 // Point 2 of the calibration 
-#define point2_cal 11857
+#define point2_cal 10763
 
 // ORP sensor calibration
-#define calibration_offset 0.0
+#define calibration_offset 0.068
 
 pHClass pHSensor;
 conductivityClass ConductivitySensor;
