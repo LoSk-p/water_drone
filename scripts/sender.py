@@ -47,6 +47,7 @@ class Sender:
                 rospy.logerr(f"Failed while pining file to Pinata. Error: {e}")
                 return "No internet"
             except Exception as e:
+                rospy.logerr(f"Unexpected exception in pinning file {e}")
                 return
 
     def _parse(self, from_topic) -> None:

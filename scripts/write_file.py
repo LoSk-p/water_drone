@@ -18,6 +18,31 @@ def _generate_pubkey(id: str) -> str:
     verify_key_hex = verify_key.hexdigest()
     return str(verify_key_hex)
 
+def median(f, med_length = 5):
+    # Creating buffer
+    if not hasattr(median, "buffer"):
+        median.buffer = [f] * med_length
+
+    # Move buffer to actually values ( [0, 1, 2] -> [1, 2, 3] )
+    median.buffer = median.buffer[1:]
+    median.buffer.append(f)
+
+    # Calculation median
+    sorted_buffer = median.buffer.copy()
+    sorted_buffer.sort()
+
+    return sorted_buffer[med_length // 2]
+
+def easy_mean(f, s_k=0.3):
+    # Creating static variable
+    if not hasattr(easy_mean, "fit"):
+        easy_mean.fit = f
+
+    # Calculation easy mean
+    easy_mean.fit += (f - easy_mean.fit) * s_k
+
+    return easy_mean.fit
+
 
 MODEL = 3
 
@@ -55,16 +80,23 @@ class GetSensors:
         if self.is_armed:
             if data.pH != "None":
                 ions_data = False
-                self.measurement["temperature"] = data.temperature
-                self.measurement["pH"] = data.pH
-                self.measurement["conductivity"] = data.conductivity
+                filtered_temperature = easy_mean(median(data.temperature))
+                self.measurement["temperature"] = filtered_temperature
+                filtered_pH = easy_mean(median(data.pH))
+                self.measurement["pH"] = filtered_pH
+                filtered_conductivity = easy_mean(median(data.conductivity))
+                self.measurement["conductivity"] = filtered_conductivity
+                filtered_ORP = easy_mean(median(data.ORP))
                 self.measurement["ORP"] = data.ORP
             else:
                 ions_data = True
-                self.measurement["temperature"] = data.temperature
-                self.measurement["NO2"] = data.NO2
+                filtered_temperature = easy_mean(median(data.temperature))
+                self.measurement["temperature"] = filtered_temperature
+                filtered_NO2 = easy_mean(median(data.NO2))
+                self.measurement["NO2"] = filtered_NO2
                 # self.measurement["NO3"] = data.NO3
-                self.measurement["NH4"] = data.NH4
+                filtered_NH4 = easy_mean(median(data.NH4))
+                self.measurement["NH4"] = filtered_NH4
             if ions_data:
                 file_prefix = "ions"
             else:
