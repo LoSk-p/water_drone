@@ -11,6 +11,7 @@ import glob
 import os
 from uuid import getnode as get_mac
 import hashlib
+from rospy_message_converter import message_converter
 
 
 def _generate_pubkey(id: str) -> str:
@@ -18,34 +19,50 @@ def _generate_pubkey(id: str) -> str:
     verify_key_hex = verify_key.hexdigest()
     return str(verify_key_hex)
 
-def median(f, med_length = 5):
+def median(measurements, med_length=3):
     # Creating buffer
+    meas = {}
+    for key in measurements.keys():
+        if measurements[key] != "None":
+            meas[key] = float(measurements[key])
+
     if not hasattr(median, "buffer"):
-        median.buffer = [f] * med_length
+        median.buffer = {}
+        for key in meas.keys():
+            median.buffer[key] = [float(meas[key])] * med_length
 
     # Move buffer to actually values ( [0, 1, 2] -> [1, 2, 3] )
-    median.buffer = median.buffer[1:]
-    median.buffer.append(f)
+    sorted_buffer = {}
+    median_values = {}
+    for key in median.buffer.keys():
+        median.buffer[key] = median.buffer[key][1:]
+        median.buffer[key].append(float(meas[key]))
 
-    # Calculation median
-    sorted_buffer = median.buffer.copy()
-    sorted_buffer.sort()
+        # Calculation median
+        sorted_buffer[key] = median.buffer[key].copy()
+        sorted_buffer[key].sort()
 
-    return sorted_buffer[med_length // 2]
+        median_values[key] = sorted_buffer[key][med_length // 2]
 
-def easy_mean(f, s_k=0.3):
+    return median_values
+
+
+def easy_mean(measurements, s_k=0.4):
+    meas = {}
+    for key in measurements.keys():
+        if measurements[key] != "None":
+            meas[key] = measurements[key]
     # Creating static variable
     if not hasattr(easy_mean, "fit"):
-        easy_mean.fit = f
+        easy_mean.fit = meas.copy()
 
     # Calculation easy mean
-    easy_mean.fit += (f - easy_mean.fit) * s_k
+    for key in meas.keys():
+        easy_mean.fit[key] += (float(meas[key]) - float(easy_mean.fit[key])) * s_k
 
     return easy_mean.fit
 
-
 MODEL = 3
-
 
 class GetSensors:
     def __init__(self) -> None:
@@ -78,26 +95,10 @@ class GetSensors:
 
     def callback_sensors(self, data: SensorData) -> None:
         if self.is_armed:
-            if data.pH != "None":
-                ions_data = False
-                filtered_temperature = easy_mean(median(data.temperature))
-                self.measurement["temperature"] = filtered_temperature
-                filtered_pH = easy_mean(median(data.pH))
-                self.measurement["pH"] = filtered_pH
-                filtered_conductivity = easy_mean(median(data.conductivity))
-                self.measurement["conductivity"] = filtered_conductivity
-                filtered_ORP = easy_mean(median(data.ORP))
-                self.measurement["ORP"] = data.ORP
-            else:
-                ions_data = True
-                filtered_temperature = easy_mean(median(data.temperature))
-                self.measurement["temperature"] = filtered_temperature
-                filtered_NO2 = easy_mean(median(data.NO2))
-                self.measurement["NO2"] = filtered_NO2
-                # self.measurement["NO3"] = data.NO3
-                filtered_NH4 = easy_mean(median(data.NH4))
-                self.measurement["NH4"] = filtered_NH4
-            if ions_data:
+            data_dict = message_converter.convert_ros_message_to_dictionary(data) 
+            self.measurement = easy_mean(median(data_dict))
+            rospy.loginfo(f"Filtered: {self.measurement}, not filtered: {data_dict}")
+            if data.pH == "None":
                 file_prefix = "ions"
             else:
                 file_prefix = "water"
