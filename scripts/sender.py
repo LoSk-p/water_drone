@@ -11,11 +11,13 @@ import os
 from std_msgs.msg import String
 from mavros_msgs.msg import State
 import json
+import getpass
 
 class Sender:
     def __init__(self) -> None:
         self.timestamp = 0
-        with open("/home/pi/catkin_ws/src/water_drone/config/config.json", "r") as f:
+        self.username = getpass.getuser()
+        with open(f"/home/{self.username}/catkin_ws/src/water_drone/config/config.json", "r") as f:
             self.config = json.load(f)
         self.current_date = str(datetime.datetime.now().strftime("%Y_%m_%d"))
         rospy.loginfo("here")
@@ -52,7 +54,7 @@ class Sender:
 
     def _parse(self, from_topic) -> None:
         # if self.is_armed:
-        list_of_files = glob.glob(f"/home/pi/data/{self.current_date}/*.json")
+        list_of_files = glob.glob(f"/home/{self.username}/data/{self.current_date}/*.json")
         latest_file = max(list_of_files, key=os.path.getctime)
         account = RI.Account(seed=self.config["robonomics"]["seed"])
         for file_path in list_of_files:
@@ -67,7 +69,7 @@ class Sender:
                         )
                         os.replace(
                             file_path,
-                            f"/home/pi/data/{self.current_date}/sent/{file_path.split('/')[-1]}",
+                            f"/home/{self.username}/data/{self.current_date}/sent/{file_path.split('/')[-1]}",
                         )
 
                     except Exception as e:

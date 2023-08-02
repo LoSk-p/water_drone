@@ -12,6 +12,7 @@ import os
 from uuid import getnode as get_mac
 import hashlib
 from rospy_message_converter import message_converter
+import getpass
 
 
 def _generate_pubkey(id: str) -> str:
@@ -68,7 +69,8 @@ class GetSensors:
     def __init__(self) -> None:
         rospy.init_node("write_file", anonymous=True)
         self.current_date = str(datetime.datetime.now().strftime("%Y_%m_%d"))
-        with open("/home/pi/catkin_ws/src/water_drone/config/config.json", "r") as f:
+        self.username = getpass.getuser()
+        with open(f"/home/{self.username}/catkin_ws/src/water_drone/config/config.json", "r") as f:
             self.config = json.load(f)
         self.interval = self.config["general"]["interval"]
         self.last_time = 0
@@ -104,14 +106,14 @@ class GetSensors:
                 file_prefix = "water"
 
             if time.time() - self.last_time > self.interval:
-                filename = f"/home/pi/data/{self.current_date}/{file_prefix}_{time.time()}.json"
+                filename = f"/home/{self.username}/data/{self.current_date}/{file_prefix}_{time.time()}.json"
                 rospy.loginfo(f"Creating new file: {filename}")
                 f = open(filename, "w")
                 self.pub.publish(f"New file {filename}")
                 self.last_time = time.time()
                 dict_from_file = {}
             else:
-                list_of_files = glob.glob(f"/home/pi/data/{self.current_date}/*.json")
+                list_of_files = glob.glob(f"/home/{self.username}/data/{self.current_date}/*.json")
                 latest_file = max(list_of_files, key=os.path.getctime)
                 with open(latest_file) as f:
                     try:

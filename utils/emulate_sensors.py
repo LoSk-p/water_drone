@@ -5,6 +5,7 @@ from water_drone.msg import SensorData
 import typing as tp
 import json
 import ast
+import getpass
 
 def get_msg_data(data: tp.Dict[str, float]) -> SensorData:
     data_msg = SensorData()
@@ -24,7 +25,7 @@ def read_data() -> None:
     data_dict = {}
     while not rospy.is_shutdown():
         time.sleep(0.4)
-        with open("/home/pi/data/2022_08_15/sensors_data/1660577237.9745145.json", "r") as f:
+        with open(f"/home/{getpass.getuser()}/data/2022_08_15/sensors_data/1660577237.9745145.json", "r") as f:
             for l in f:
                 data = ast.literal_eval(l)
                 data = {

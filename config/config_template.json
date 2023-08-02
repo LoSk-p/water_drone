@@ -8,5 +8,11 @@
     },
     "robonomics": {
         "seed": ""
+    },
+    "rpi_pins": {
+        "sensor_1": 26,
+        "sensor_2": 19,
+        "pump_in": 27,
+        "pump_out": 17
     }
 }
