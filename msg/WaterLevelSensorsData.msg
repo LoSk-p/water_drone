@@ -1,0 +1,2 @@
+int8 low_sensor
+int8 up_sensor

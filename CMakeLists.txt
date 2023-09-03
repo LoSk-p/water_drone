@@ -52,14 +52,14 @@ find_package(catkin REQUIRED COMPONENTS
  add_message_files(
    FILES
    SensorData.msg
+   WaterLevelSensorsData.msg
  )
 
-## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
+# Generate services in the 'srv' folder
+add_service_files(
+  FILES
+  RunPump.srv
+)
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -165,6 +165,7 @@ include_directories(
    scripts/get_sensor_data.py
    scripts/write_file.py
    scripts/sender.py
+   scripts/pumps_control.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
 

@@ -10,9 +10,16 @@
         "seed": ""
     },
     "rpi_pins": {
-        "sensor_1": 26,
-        "sensor_2": 19,
-        "pump_in": 27,
-        "pump_out": 17
-    }
+        "sensor_up": 26,
+        "sensor_down": 19,
+        "pump_in_main": 17, 
+        "pump_out_main": 27,
+        "pump1": 1,
+        "pump2": 2,
+        "pump3": 3,
+        "pump4": 4,
+        "pump5": 5,
+        "pump6": 6
+    },
+    "extra_pumps": false
 }
