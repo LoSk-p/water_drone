@@ -56,26 +56,27 @@ class Sender:
         # if self.is_armed:
         list_of_files = glob.glob(f"/home/{self.username}/data/{self.current_date}/*.json")
         latest_file = max(list_of_files, key=os.path.getctime)
+        if latest_file != from_topic.data:
+            list_of_files.remove(latest_file)
         account = Account(seed=self.config["robonomics"]["seed"])
         for file_path in list_of_files:
-            if file_path != latest_file:  # the latest can be modified right now
-                ipfs_hash = self.pin_file_to_pinata(file_path)
-                if ipfs_hash and (ipfs_hash != "No internet"):
-                    try:
-                        datalog = Datalog(account)
-                        transaction_hash = datalog.record(ipfs_hash)
-                        rospy.loginfo(
-                            f"Ipfs hash sent to Robonomics Parachain. Transaction hash is: {transaction_hash}"
-                        )
-                        os.replace(
-                            file_path,
-                            f"/home/{self.username}/data/{self.current_date}/sent/{file_path.split('/')[-1]}",
-                        )
+            ipfs_hash = self.pin_file_to_pinata(file_path)
+            if ipfs_hash and (ipfs_hash != "No internet"):
+                try:
+                    datalog = Datalog(account)
+                    transaction_hash = datalog.record(ipfs_hash)
+                    rospy.loginfo(
+                        f"Ipfs hash sent to Robonomics Parachain. Transaction hash is: {transaction_hash}"
+                    )
+                    os.replace(
+                        file_path,
+                        f"/home/{self.username}/data/{self.current_date}/sent/{file_path.split('/')[-1]}",
+                    )
 
-                    except Exception as e:
-                        rospy.logerr(f"Failed to send hash to Robonomics with: {e}")
-                        time.sleep(10)
-                else:
-                    return
+                except Exception as e:
+                    rospy.logerr(f"Failed to send hash to Robonomics with: {e}")
+                    time.sleep(10)
+            else:
+                return
 
 sender = Sender()

@@ -14,6 +14,8 @@ import getpass
 
 from water_drone.msg import SensorData
 from water_drone.srv import RunPump
+from mavros_msgs.msg import CommandLong
+from mavros_msgs.srv import CommandLongRequest, CommandLongResponse
 
 MEASURE_TIMEOUT = 10
 
@@ -35,14 +37,28 @@ class WaspmoteSensors:
         rospy.loginfo(f"Get sensors is ready. Current data {self.current_date}")
         rospy.Subscriber("/mavros/state", State, self.get_state)
         rospy.Subscriber("/mavros/global_position/global", NavSatFix, self.callback_gps)
-        rospy.Subscriber("/start_measure", String, self.start_measure)
+        rospy.Subscriber("/start_measure_pumps", String, self.start_measure)
+        self.start_measure_publisher = rospy.Publisher("write_measure_status", String, queue_size=10)
+        self.command_publisher = rospy.Publisher('/mavros/cmd/command', CommandLong, queue_size=10)
+    
+    def start_pause_mission(self, command: str):
+        cmd_msg = CommandLong()
+        cmd_msg.command = 252  # MAV_CMD_DO_PAUSE_CONTINUE
+        cmd_msg.param1 = 1 if command == "pause" else 0  # 1 to pause, 0 to continue
+        cmd_msg.target_system = 1  # Your target system ID
+        cmd_msg.target_component = 1  # Your target component ID
+        self.command_publisher.publish(cmd_msg)
 
     def start_measure(self, data):
         rospy.loginfo(f"Measure: {data}")
+        self.start_pause_mission("pause")
         self.run_pump(main_pump=1, pump_in=1, number_of_pump=0)
         self.measure = True
+        self.start_measure_publisher.publish("measure")
         time.sleep(MEASURE_TIMEOUT)
         self.measure = False
+        self.start_measure_publisher.publish("dont measure")
+        self.start_pause_mission("start")
         self.run_pump(main_pump=1, pump_in=0, number_of_pump=0)
 
     def callback_gps(self, data):

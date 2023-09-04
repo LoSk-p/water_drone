@@ -78,10 +78,24 @@ class GetSensors:
         self.lon = 0
         self.data_json = {}
         self.measurement = {}  # single measurement
-        self.is_armed = False
+        self.is_armed = False 
+        self.data_filename = ""
+        self.measure = False
+        self.mac = f"{get_mac()}_{time.time()}"
         rospy.loginfo(f"Write file is ready. Current data {self.current_date}")
         self.pub = rospy.Publisher("new_file", String, queue_size=10)
         rospy.Subscriber("/mavros/state", State, self.get_state)
+        rospy.Subscriber("/write_measure_status", String, self.get_measure_status)
+
+    def get_measure_status(self, data):
+        if data.data == "measure":
+            self.data_filename = f"/home/{self.username}/data/{self.current_date}/{round(time.time())}.json"
+            with open(self.data_filename, "w") as f:
+                pass
+            self.measure = True
+        elif data.data == "dont measure":
+            self.measure = False
+            self.pub.publish(self.data_filename)
 
     def get_state(self, data):
         if self.is_armed != data.armed:
@@ -96,32 +110,18 @@ class GetSensors:
         self.data_json["Lon"] = data.longitude
 
     def callback_sensors(self, data: SensorData) -> None:
-        if self.is_armed:
+        if self.is_armed and self.measure:
             data_dict = message_converter.convert_ros_message_to_dictionary(data) 
             self.measurement = easy_mean(median(data_dict))
             rospy.loginfo(f"Filtered: {self.measurement}, not filtered: {data_dict}")
-            if data.pH == "None":
-                file_prefix = "ions"
-            else:
-                file_prefix = "water"
 
-            if time.time() - self.last_time > self.interval:
-                filename = f"/home/{self.username}/data/{self.current_date}/{file_prefix}_{time.time()}.json"
-                rospy.loginfo(f"Creating new file: {filename}")
-                f = open(filename, "w")
-                self.pub.publish(f"New file {filename}")
-                self.last_time = time.time()
-                dict_from_file = {}
-            else:
-                list_of_files = glob.glob(f"/home/{self.username}/data/{self.current_date}/*.json")
-                latest_file = max(list_of_files, key=os.path.getctime)
-                with open(latest_file) as f:
-                    try:
-                        dict_from_file = json.load(f)
-                    except json.decoder.JSONDecodeError as e:
-                        rospy.loginfo(e)
-                        dict_from_file = {}
-                f = open(latest_file, "w")
+            with open(self.data_filename) as f:
+                try:
+                    dict_from_file = json.load(f)
+                except json.decoder.JSONDecodeError as e:
+                    rospy.loginfo(e)
+                    dict_from_file = {}
+            f = open(self.data_filename, "w")
 
             if "timestamp" in self.data_json:
                 public_address = _generate_pubkey(str(self.mac))
