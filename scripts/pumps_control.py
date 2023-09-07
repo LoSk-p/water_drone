@@ -9,7 +9,7 @@ import getpass
 from water_drone.srv import RunPump
 from water_drone.msg import WaterLevelSensorsData
 
-PUMP_IN_DELAY = 60
+PUMP_IN_DELAY = 35
 
 class Pumps:
     def __init__(self) -> None:

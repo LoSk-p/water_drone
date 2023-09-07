@@ -13,6 +13,8 @@ from mavros_msgs.msg import State
 import json
 import getpass
 
+USE_IPFS = False
+
 class Sender:
     def __init__(self) -> None:
         self.timestamp = 0
@@ -60,23 +62,37 @@ class Sender:
             list_of_files.remove(latest_file)
         account = Account(seed=self.config["robonomics"]["seed"])
         for file_path in list_of_files:
-            ipfs_hash = self.pin_file_to_pinata(file_path)
-            if ipfs_hash and (ipfs_hash != "No internet"):
-                try:
-                    datalog = Datalog(account)
-                    transaction_hash = datalog.record(ipfs_hash)
-                    rospy.loginfo(
-                        f"Ipfs hash sent to Robonomics Parachain. Transaction hash is: {transaction_hash}"
-                    )
-                    os.replace(
-                        file_path,
-                        f"/home/{self.username}/data/{self.current_date}/sent/{file_path.split('/')[-1]}",
-                    )
-
-                except Exception as e:
-                    rospy.logerr(f"Failed to send hash to Robonomics with: {e}")
-                    time.sleep(10)
+            if USE_IPFS:
+                ipfs_hash = self.pin_file_to_pinata(file_path)
+                if ipfs_hash and (ipfs_hash != "No internet"):
+                    data_for_datalog = ipfs_hash
+                else:
+                    return
             else:
-                return
+                with open(file_path) as f:
+                    try:
+                        dict_from_file = json.load(f)
+                        public_key = list(dict_from_file.keys())[0]
+                        data_for_datalog = json.dumps(dict_from_file[public_key]["mean_values"])
+                    except json.decoder.JSONDecodeError as e:
+                        rospy.loginfo(e)
+                        dict_from_file = {}
+                        data_for_datalog = ""
+            try:
+                datalog = Datalog(account)
+                rospy.loginfo(f"Start creating datalog witn {data_for_datalog}")
+                transaction_hash = datalog.record(data_for_datalog)
+                rospy.loginfo(
+                    f"Ipfs hash sent to Robonomics Parachain. Transaction hash is: {transaction_hash}"
+                )
+                os.replace(
+                    file_path,
+                    f"/home/{self.username}/data/{self.current_date}/sent/{file_path.split('/')[-1]}",
+                )
+
+            except Exception as e:
+                rospy.logerr(f"Failed to send hash to Robonomics with: {e}")
+                time.sleep(10)
+
 
 sender = Sender()

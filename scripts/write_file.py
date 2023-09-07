@@ -13,6 +13,7 @@ from uuid import getnode as get_mac
 import hashlib
 from rospy_message_converter import message_converter
 import getpass
+from copy import deepcopy
 
 
 def _generate_pubkey(id: str) -> str:
@@ -83,7 +84,7 @@ class GetSensors:
         self.measure = False
         self.mac = f"{get_mac()}_{time.time()}"
         rospy.loginfo(f"Write file is ready. Current data {self.current_date}")
-        self.pub = rospy.Publisher("new_file", String, queue_size=10)
+        self.publisher = rospy.Publisher("new_file", String, queue_size=10)
         rospy.Subscriber("/mavros/state", State, self.get_state)
         rospy.Subscriber("/write_measure_status", String, self.get_measure_status)
 
@@ -95,7 +96,7 @@ class GetSensors:
             self.measure = True
         elif data.data == "dont measure":
             self.measure = False
-            self.pub.publish(self.data_filename)
+            self.publisher.publish(self.data_filename)
 
     def get_state(self, data):
         if self.is_armed != data.armed:
@@ -119,7 +120,7 @@ class GetSensors:
                 try:
                     dict_from_file = json.load(f)
                 except json.decoder.JSONDecodeError as e:
-                    rospy.loginfo(e)
+                    rospy.loginfo(f"Error in json load: {e}")
                     dict_from_file = {}
             f = open(self.data_filename, "w")
 
@@ -139,6 +140,23 @@ class GetSensors:
                     )
                 else:
                     dict_from_file.update(measurmnet_format_data)
+                values_for_mean = dict_from_file[public_address]["measurements"][len(dict_from_file[public_address]["measurements"])//2:]
+                mean_values = deepcopy(values_for_mean[0])
+                if "geo" in mean_values:
+                    mean_values.pop("geo", None)
+                if "timestamp" in mean_values:
+                    mean_values.pop("timestamp", None)
+                number_of_meas = len(values_for_mean)
+                for measurement in values_for_mean:
+                    for key in mean_values.keys():
+                        mean_values[key] += measurement[key]
+                for key in mean_values.keys():
+                    mean_values[key] = mean_values[key]/number_of_meas
+                if "geo" in values_for_mean[0]:
+                    mean_values["geo"] = values_for_mean[0]["geo"]
+                if "timestamp" in values_for_mean[-1]:
+                    mean_values["timestamp"] = values_for_mean[-1]["timestamp"]
+                dict_from_file[public_address]["mean_values"] = mean_values
                 json.dump(dict_from_file, f)
                 f.write("\n")
                 f.close()
