@@ -31,7 +31,7 @@ class WaspmoteSensors:
         self.last_time = 0
         self.current_date = str(datetime.datetime.now().strftime("%Y_%m_%d"))
         self.create_folder()
-        self.is_armed = True
+        self.is_armed = False
         self.measure = False
         rospy.loginfo(f"Get sensors is ready. Current data {self.current_date}")
         rospy.Subscriber("/mavros/state", State, self.get_state)

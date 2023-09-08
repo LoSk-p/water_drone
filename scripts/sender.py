@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 import requests
 import rospy
@@ -12,6 +12,7 @@ from std_msgs.msg import String
 from mavros_msgs.msg import State
 import json
 import getpass
+from copy import deepcopy
 
 USE_IPFS = False
 
@@ -73,7 +74,10 @@ class Sender:
                     try:
                         dict_from_file = json.load(f)
                         public_key = list(dict_from_file.keys())[0]
-                        data_for_datalog = json.dumps(dict_from_file[public_key]["mean_values"])
+                        mean_values = deepcopy(dict_from_file[public_key]["mean_values"])
+                        mean_values.pop("geo")
+                        json_for_datalog = {public_key: {"model": 3, "geo": dict_from_file[public_key]["mean_values"]["geo"], "measurements": [mean_values]}}
+                        data_for_datalog = json.dumps(json_for_datalog)
                     except json.decoder.JSONDecodeError as e:
                         rospy.loginfo(e)
                         dict_from_file = {}
