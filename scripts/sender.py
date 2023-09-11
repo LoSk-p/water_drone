@@ -24,18 +24,11 @@ class Sender:
             self.config = json.load(f)
         self.current_date = str(datetime.datetime.now().strftime("%Y_%m_%d"))
         rospy.loginfo("here")
-        self.is_armed = False
         rospy.loginfo(f"Sender is ready. Current date {self.current_date}")
         rospy.init_node("sender", anonymous=True)
         rospy.Subscriber("/new_file", String, self._parse)
-        rospy.Subscriber("/mavros/state", State, self.get_state)
         while not rospy.is_shutdown():
             pass
-
-    def get_state(self, data):
-        if self.is_armed != data.armed:
-            rospy.loginfo(f"DATA_SENDER NODE: Armed changed: {data.armed}")
-        self.is_armed = data.armed
 
     def pin_file_to_pinata(self, file_path: str) -> str:
         pinata_api = self.config["pinata"]["api"]
@@ -56,7 +49,6 @@ class Sender:
                 return
 
     def _parse(self, from_topic) -> None:
-        # if self.is_armed:
         list_of_files = glob.glob(f"/home/{self.username}/data/{self.current_date}/*.json")
         latest_file = max(list_of_files, key=os.path.getctime)
         if latest_file != from_topic.data:
@@ -76,7 +68,8 @@ class Sender:
                         public_key = list(dict_from_file.keys())[0]
                         mean_values = deepcopy(dict_from_file[public_key]["mean_values"])
                         mean_values.pop("geo")
-                        json_for_datalog = {public_key: {"model": 3, "geo": dict_from_file[public_key]["mean_values"]["geo"], "measurements": [mean_values]}}
+                        geo = dict_from_file[public_key]["mean_values"]["geo"]
+                        json_for_datalog = {public_key: {"model": 3, "geo": f"{geo[0]},{geo[1]}", "measurements": [mean_values]}}
                         data_for_datalog = json.dumps(json_for_datalog)
                     except json.decoder.JSONDecodeError as e:
                         rospy.loginfo(e)

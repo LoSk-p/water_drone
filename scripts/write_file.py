@@ -77,9 +77,9 @@ class GetSensors:
         self.last_time = 0
         self.lat = 0
         self.lon = 0
-        self.data_json = {}
+        self.data_json = {"Lat": 1, "Lon": 1, "timestamp": 1}
         self.measurement = {}  # single measurement
-        self.is_armed = False 
+        self.is_armed = True 
         self.data_filename = ""
         self.measure = False
         self.mac = f"{get_mac()}_{time.time()}"
