@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import requests
 import rospy
@@ -9,7 +9,6 @@ from pinatapy import PinataPy
 from robonomicsinterface import Account, Datalog
 import os
 from std_msgs.msg import String
-from mavros_msgs.msg import State
 import json
 import getpass
 from copy import deepcopy
@@ -18,14 +17,13 @@ USE_IPFS = False
 
 class Sender:
     def __init__(self) -> None:
+        rospy.init_node("sender", anonymous=True)
         self.timestamp = 0
         self.username = getpass.getuser()
         with open(f"/home/{self.username}/catkin_ws/src/water_drone/config/config.json", "r") as f:
             self.config = json.load(f)
         self.current_date = str(datetime.datetime.now().strftime("%Y_%m_%d"))
-        rospy.loginfo("here")
         rospy.loginfo(f"Sender is ready. Current date {self.current_date}")
-        rospy.init_node("sender", anonymous=True)
         rospy.Subscriber("/new_file", String, self._parse)
         while not rospy.is_shutdown():
             pass
@@ -53,6 +51,7 @@ class Sender:
         latest_file = max(list_of_files, key=os.path.getctime)
         if latest_file != from_topic.data:
             list_of_files.remove(latest_file)
+        rospy.loginfo(f"Start sending files: {list_of_files}")
         account = Account(seed=self.config["robonomics"]["seed"])
         for file_path in list_of_files:
             if USE_IPFS:
@@ -80,7 +79,7 @@ class Sender:
                 rospy.loginfo(f"Start creating datalog witn {data_for_datalog}")
                 transaction_hash = datalog.record(data_for_datalog)
                 rospy.loginfo(
-                    f"Ipfs hash sent to Robonomics Parachain. Transaction hash is: {transaction_hash}"
+                    f"Data was sent to Robonomics Parachain. Transaction hash is: {transaction_hash}"
                 )
                 os.replace(
                     file_path,

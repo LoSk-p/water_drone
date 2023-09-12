@@ -38,9 +38,9 @@ class WaspmoteSensors:
         rospy.Subscriber("/mavros/global_position/global", NavSatFix, self.callback_gps)
         rospy.Subscriber("/start_measure_pumps", String, self.start_measure)
         self.start_measure_publisher = rospy.Publisher("write_measure_status", String, queue_size=10)
-        # rospy.wait_for_service('/mavros/cmd/command')
+        rospy.wait_for_service('/mavros/cmd/command')
         self.mavros_cmd = rospy.ServiceProxy('/mavros/cmd/command', CommandLong)
-        # rospy.wait_for_service('run_pump')
+        rospy.wait_for_service('run_pump')
         self.run_pump = rospy.ServiceProxy('run_pump', RunPump)
         self.lat = 0
         self.lon = 0
@@ -56,15 +56,15 @@ class WaspmoteSensors:
 
     def start_measure(self, data):
         rospy.loginfo(f"Measure: {data}")
-        # self.start_pause_mission("pause")
-        # self.run_pump(main_pump=1, pump_in=1, number_of_pump=0)
+        self.start_pause_mission("pause")
+        self.run_pump(main_pump=1, pump_in=1, number_of_pump=0)
         self.measure = True
         self.start_measure_publisher.publish("measure")
         time.sleep(MEASURE_TIMEOUT)
         self.measure = False
         self.start_measure_publisher.publish("dont measure")
-        # self.start_pause_mission("start")
-        # self.run_pump(main_pump=1, pump_in=0, number_of_pump=0)
+        self.start_pause_mission("start")
+        self.run_pump(main_pump=1, pump_in=0, number_of_pump=0)
 
     def callback_gps(self, data):
         self.lat = data.latitude

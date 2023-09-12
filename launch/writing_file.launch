@@ -1,5 +1,7 @@
 <launch>
-    <include file="$(find mavros)/launch/px4.launch"/>
+    <include file="$(find mavros)/launch/apm2.launch">
+        <arg name="fcu_url" value="/dev/ttyAMA0:57600" />
+    </include>
     <node pkg="water_drone" type="pumps_control.py" name="pumps_control" respawn="true" output="log" />
     <node pkg="water_drone" type="get_sensor_data.py" name="waspmote_sensors" respawn="true" output="log" />
     <node pkg="water_drone" type="write_file.py" name="write_file" respawn="true" output="log" />
