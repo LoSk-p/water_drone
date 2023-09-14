@@ -63,7 +63,7 @@ class Pumps:
 
     def start_pause_mission(self, command: str):
         cmd_msg = CommandLong()
-        cmd_msg.command = CommandCode.MAV_CMD_DO_PAUSE_CONTINUE  # MAV_CMD_DO_PAUSE_CONTINUE
+        cmd_msg.command = CommandCode.DO_PAUSE_CONTINUE  # MAV_CMD_DO_PAUSE_CONTINUE
         cmd_msg.param1 = 1 if command == "pause" else 0  # 1 to pause, 0 to continue
         cmd_msg.target_system = 1  # Your target system ID
         cmd_msg.target_component = 1  # Your target component ID
