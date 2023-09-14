@@ -47,17 +47,8 @@ class WaspmoteSensors:
         self.timestamp = 0
     
     def start_pause_mission(self, command: str):
-        cmd_msg = CommandLong()
-        cmd_msg.command = CommandCode.DO_PAUSE_CONTINUE  # MAV_CMD_DO_PAUSE_CONTINUE
-        cmd_msg.confirmation = 0
-        cmd_msg.param1 = 1 if command == "pause" else 0  # 1 to pause, 0 to continue
-        cmd_msg.param2 = 0
-        cmd_msg.param3 = 0
-        cmd_msg.param4 = 0
-        cmd_msg.param5 = 0
-        cmd_msg.param6 = 0
-        cmd_msg.param7 = 0
-        response = self.mavros_cmd(cmd_msg)
+        response = self.mavros_cmd(command=CommandCode.DO_PAUSE_CONTINUE, 
+                                    param1=1 if command == "pause" else 0)
 
     def start_measure(self, data):
         rospy.loginfo(f"Measure: {data}")
