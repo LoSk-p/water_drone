@@ -64,9 +64,14 @@ class Pumps:
     def start_pause_mission(self, command: str):
         cmd_msg = CommandLong()
         cmd_msg.command = CommandCode.DO_PAUSE_CONTINUE  # MAV_CMD_DO_PAUSE_CONTINUE
+        cmd_msg.confirmation = 0
         cmd_msg.param1 = 1 if command == "pause" else 0  # 1 to pause, 0 to continue
-        cmd_msg.target_system = 1  # Your target system ID
-        cmd_msg.target_component = 1  # Your target component ID
+        cmd_msg.param2 = 0
+        cmd_msg.param3 = 0
+        cmd_msg.param4 = 0
+        cmd_msg.param5 = 0
+        cmd_msg.param6 = 0
+        cmd_msg.param7 = 0
         response = self.mavros_cmd(cmd_msg)
 
     def handle_run_pump(self, req):
