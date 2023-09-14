@@ -30,7 +30,7 @@ class WaspmoteSensors:
         self.interval = self.config["general"]["interval"]  #how often to create new file
         self.last_time = 0
         self.current_date = str(datetime.datetime.now().strftime("%Y_%m_%d"))
-        self.create_folder()
+        # self.create_folder()
         self.is_armed = False
         self.measure = False
         rospy.loginfo(f"Get sensors is ready. Current data {self.current_date}")
@@ -86,15 +86,16 @@ class WaspmoteSensors:
         self.data_msg.NO3 = data["NO3"]
         self.data_msg.NH4 = data["NH4"]
 
-    def create_folder(self) -> None:
-        if not (os.path.isdir(f"/home/{self.username}/data")):
-            os.mkdir(f"/home/{self.username}/data")
-            rospy.loginfo("Folder 'data' created")
-        if not (os.path.isdir(f"/home/{self.username}/data/{self.current_date}")):
-            os.mkdir(f"/home/{self.username}/data/{self.current_date}")
-            os.mkdir(f"/home/{self.username}/data/{self.current_date}/sent")
-            os.mkdir(f"/home/{self.username}/data/{self.current_date}/sensors_data")
-            rospy.loginfo("New data folders created")
+    # def create_folder(self) -> None:
+    #     if not (os.path.isdir(f"/home/{self.username}/data")):
+    #         os.mkdir(f"/home/{self.username}/data")
+    #         rospy.loginfo("Folder 'data' created")
+    #     if not (os.path.isdir(f"/home/{self.username}/data/{self.current_date}")):
+    #         os.mkdir(f"/home/{self.username}/data/{self.current_date}")
+    #         os.mkdir(f"/home/{self.username}/data/{self.current_date}/sent")
+    #         os.mkdir(f"/home/{self.username}/data/{self.current_date}/sensors_data")
+    #         os.mkdir(f"/home/{self.username}/data/{self.current_date}/gps")
+    #         rospy.loginfo("New data folders created")
 
     def publish_data(self) -> None:
         ser = serial.Serial(

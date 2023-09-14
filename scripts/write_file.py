@@ -73,11 +73,12 @@ class GetSensors:
         self.username = getpass.getuser()
         with open(f"/home/{self.username}/catkin_ws/src/water_drone/config/config.json", "r") as f:
             self.config = json.load(f)
+        self.create_folder()
         self.interval = self.config["general"]["interval"]
         self.last_time = 0
         self.lat = 0
         self.lon = 0
-        self.data_json = {"Lat": 1, "Lon": 1, "timestamp": 1}
+        self.data_json = {}
         self.measurement = {}  # single measurement
         self.is_armed = True 
         self.data_filename = ""
@@ -87,6 +88,20 @@ class GetSensors:
         self.publisher = rospy.Publisher("new_file", String, queue_size=10)
         rospy.Subscriber("/mavros/state", State, self.get_state)
         rospy.Subscriber("/write_measure_status", String, self.get_measure_status)
+        self.gps_filename = f"/home/{self.username}/data/{self.current_date}/gps/gps-{round(time.time())}"
+        self.gps_counter = 0
+
+    def create_folder(self) -> None:
+        if not (os.path.isdir(f"/home/{self.username}/data")):
+            os.mkdir(f"/home/{self.username}/data")
+            rospy.loginfo("Folder 'data' created")
+        if not (os.path.isdir(f"/home/{self.username}/data/{self.current_date}")):
+            os.mkdir(f"/home/{self.username}/data/{self.current_date}")
+            os.mkdir(f"/home/{self.username}/data/{self.current_date}/sent")
+            os.mkdir(f"/home/{self.username}/data/{self.current_date}/sensors_data")
+            os.mkdir(f"/home/{self.username}/data/{self.current_date}/gps")
+            os.mkdir(f"/home/{self.username}/data/{self.current_date}/pumps")
+            rospy.loginfo("New data folders created")
 
     def get_measure_status(self, data):
         if data.data == "measure":
@@ -109,6 +124,12 @@ class GetSensors:
         self.data_json["timestamp"] = data.header.stamp.secs
         self.data_json["Lat"] = data.latitude
         self.data_json["Lon"] = data.longitude
+        if self.gps_counter > 30:
+            self.gps_counter = 0
+            with open(self.gps_filename, "a") as f:
+                f.write(f"{data.header.stamp.secs},{data.latitude},{data.longitude}\n")
+        else:
+            self.gps_counter += 1
 
     def callback_sensors(self, data: SensorData) -> None:
         if self.is_armed and self.measure:

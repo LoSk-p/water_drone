@@ -5,6 +5,12 @@ import rospy
 import time
 import json
 import getpass
+from sensor_msgs.msg import NavSatFix
+import datetime
+from mavros_msgs.srv import CommandLong
+from mavros_msgs.srv import CommandLongRequest, CommandLongResponse
+from mavros_msgs.msg import CommandCode
+
 
 from water_drone.srv import RunPump
 from water_drone.msg import WaterLevelSensorsData
@@ -15,8 +21,13 @@ class Pumps:
     def __init__(self) -> None:
         self.measure = False
         self.username = getpass.getuser()
+        self.lat = None
+        self.lon = None
+        self.timestamp = None
+        self.current_date = str(datetime.datetime.now().strftime("%Y_%m_%d"))
         with open(f"/home/{self.username}/catkin_ws/src/water_drone/config/config.json", "r") as f:
             self.config = json.load(f)
+        self.pumps_filename = f"/home/{self.username}/data/{self.current_date}/pumps/pumps-{time.time()}.json"
         rospy.init_node("pumps_control", anonymous=True)
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(self.config["rpi_pins"]["sensor_up"], GPIO.IN)
@@ -40,6 +51,23 @@ class Pumps:
             GPIO.output(self.config["rpi_pins"]["pump6"], GPIO.HIGH)
         s = rospy.Service('run_pump', RunPump, self.handle_run_pump)
         self.publisher = rospy.Publisher("water_level_sensors", WaterLevelSensorsData, queue_size=10)
+        rospy.Subscriber("/mavros/global_position/global", NavSatFix, self.callback_gps)
+        rospy.wait_for_service('/mavros/cmd/command')
+        self.mavros_cmd = rospy.ServiceProxy('/mavros/cmd/command', CommandLong)
+        rospy.loginfo("Pumps control is ready")
+
+    def callback_gps(self, data):
+        self.lat = data.latitude
+        self.lon = data.longitude
+        self.timestamp = data.header.stamp.secs
+
+    def start_pause_mission(self, command: str):
+        cmd_msg = CommandLong()
+        cmd_msg.command = CommandCode.MAV_CMD_DO_PAUSE_CONTINUE  # MAV_CMD_DO_PAUSE_CONTINUE
+        cmd_msg.param1 = 1 if command == "pause" else 0  # 1 to pause, 0 to continue
+        cmd_msg.target_system = 1  # Your target system ID
+        cmd_msg.target_component = 1  # Your target component ID
+        response = self.mavros_cmd(cmd_msg)
 
     def handle_run_pump(self, req):
         if req.main_pump:
@@ -74,9 +102,14 @@ class Pumps:
             rospy.logerr("The node was initialised without extra pumps")
             return
         rospy.loginfo(f"Start pump in water in pump {number_of_pump}")
+        self.start_pause_mission("pause")
+        with open(self.pumps_filename, "a") as f:
+            json_data = json.dumps({"Lat": self.lat, "Lon": self.lon, "timestamp": self.timestamp, "pump_number": number_of_pump})
+            f.write(f"{json_data}\n")
         GPIO.output(self.config["rpi_pins"][f"pump{number_of_pump}"], GPIO.LOW)
         time.sleep(PUMP_IN_DELAY)
         GPIO.output(self.config["rpi_pins"][f"pump{number_of_pump}"], GPIO.HIGH)
+        self.start_pause_mission("start")
         rospy.loginfo("Finished pump in water")
 
     def send_sensors_data(self):
