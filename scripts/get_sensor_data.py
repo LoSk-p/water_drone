@@ -3,7 +3,7 @@
 import rospy
 import serial
 from std_msgs.msg import String
-from mavros_msgs.msg import State
+from mavros_msgs.msg import State, WaypointReached
 import time
 import os
 import datetime
@@ -36,7 +36,7 @@ class WaspmoteSensors:
         rospy.loginfo(f"Get sensors is ready. Current data {self.current_date}")
         rospy.Subscriber("/mavros/state", State, self.get_state)
         rospy.Subscriber("/mavros/global_position/global", NavSatFix, self.callback_gps)
-        rospy.Subscriber("/start_measure_pumps", String, self.start_measure)
+        rospy.Subscriber("/mavros/mission/reached", WaypointReached, self.start_measure)
         self.start_measure_publisher = rospy.Publisher("write_measure_status", String, queue_size=10)
         rospy.wait_for_service('/mavros/cmd/command')
         self.mavros_cmd = rospy.ServiceProxy('/mavros/cmd/command', CommandLong)
@@ -51,7 +51,7 @@ class WaspmoteSensors:
                                     param1=1 if command == "pause" else 0)
 
     def start_measure(self, data):
-        rospy.loginfo(f"Measure: {data}")
+        rospy.loginfo(f"Waypoint reached: {data}")
         self.start_pause_mission("pause")
         self.run_pump(main_pump=1, pump_in=1, number_of_pump=0)
         self.measure = True

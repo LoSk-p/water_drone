@@ -18,14 +18,13 @@ USE_IPFS = False
 
 class Sender:
     def __init__(self) -> None:
+        rospy.init_node("sender", anonymous=True)
         self.timestamp = 0
         self.username = getpass.getuser()
         with open(f"/home/{self.username}/catkin_ws/src/water_drone/config/config.json", "r") as f:
             self.config = json.load(f)
         self.current_date = str(datetime.datetime.now().strftime("%Y_%m_%d"))
-        rospy.loginfo("here")
         rospy.loginfo(f"Sender is ready. Current date {self.current_date}")
-        rospy.init_node("sender", anonymous=True)
         rospy.Subscriber("/new_file", String, self._parse)
         while not rospy.is_shutdown():
             pass

@@ -102,9 +102,11 @@ class Pumps:
         with open(self.pumps_filename, "a") as f:
             json_data = json.dumps({"Lat": self.lat, "Lon": self.lon, "timestamp": self.timestamp, "pump_number": number_of_pump})
             f.write(f"{json_data}\n")
+        self.pump_in_main()
         GPIO.output(self.config["rpi_pins"][f"pump{number_of_pump}"], GPIO.LOW)
         time.sleep(PUMP_IN_DELAY)
         GPIO.output(self.config["rpi_pins"][f"pump{number_of_pump}"], GPIO.HIGH)
+        self.pump_out_main()
         self.start_pause_mission("start")
         rospy.loginfo("Finished pump in water")
 

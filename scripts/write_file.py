@@ -80,7 +80,7 @@ class GetSensors:
         self.lon = 0
         self.data_json = {}
         self.measurement = {}  # single measurement
-        self.is_armed = True 
+        self.is_armed = False 
         self.data_filename = ""
         self.measure = False
         self.mac = f"{get_mac()}_{time.time()}"
@@ -132,6 +132,7 @@ class GetSensors:
             self.gps_counter += 1
 
     def callback_sensors(self, data: SensorData) -> None:
+        rospy.loginfo(f"armed: {self.is_armed}, measure: {self.measure}")
         if self.is_armed and self.measure:
             data_dict = message_converter.convert_ros_message_to_dictionary(data) 
             self.measurement = easy_mean(median(data_dict))
