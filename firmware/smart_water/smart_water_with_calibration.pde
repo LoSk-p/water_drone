@@ -13,7 +13,7 @@ char filename[] = "SmartWater_FRMW_V1_1.hex";
 // 0 - pt1000;
 // 1 - датчик температуры, встроенный в датчик мутности
 //!ПРИ ИСПОЛЬЗОВАНИИ ДАТЧИКА МУТНОСТИ ДАТЧИК ТЕМПЕРАТУРЫ pt1000 ДОЛЖЕН БЫТЬ ОТКЛЮЧЕН!
-int TEMP_SENSOR_TYPE = 1; 
+int TEMP_SENSOR_TYPE = 0; 
 int debug = 0;
 // 0 - show nothing (calibration mode)
 // 1 - show frame
@@ -243,7 +243,7 @@ void loop()
           delay(1000);
           USB.println(F("#?"));
           //CondCalib_R1(62000, 90000);
-          CondCalib_R2(12880, 80000);
+          CondCalib_R1(12880, 80000);
           USB.println(F("#c"));
           break;
         case 107: // k
@@ -303,30 +303,30 @@ void loop()
           ORPSensorCalib();
           USB.println(F("#s"));
           break;
-        case 102: // f
-          auxFVMajor = Utils.readEEPROM(addressFVMajor);
-          auxFVMinor = Utils.readEEPROM(addressFVMajor);
-          //USB.print(F("Имя устройства: "));
-          //USB.println(node_ID);
-          USB.print(F("<|"));
-          //delay(1000);
-          //USB.println();
-          USB.print(node_ID);
-          USB.print("|");
-          ShowSerialNumber();
-          USB.print("|");
-          //USB.print(F("Версия прошивки: "));
-          USB.print(auxFVMajor);
-          USB.print(F("."));
-          //USB.println(auxFVMinor);
-          USB.print(auxFVMinor);
-          USB.print("|");
-          USB.print(check_md5);
-          USB.print("|");
-          USB.print(filename);
-          USB.println(F("|>"));
-          delay(5000);
-          break;
+        // case 102: // f
+        //   auxFVMajor = Utils.readEEPROM(addressFVMajor);
+        //   auxFVMinor = Utils.readEEPROM(addressFVMajor);
+        //   //USB.print(F("Имя устройства: "));
+        //   //USB.println(node_ID);
+        //   USB.print(F("<|"));
+        //   //delay(1000);
+        //   //USB.println();
+        //   USB.print(node_ID);
+        //   USB.print("|");
+        //   ShowSerialNumber();
+        //   USB.print("|");
+        //   //USB.print(F("Версия прошивки: "));
+        //   USB.print(auxFVMajor);
+        //   USB.print(F("."));
+        //   //USB.println(auxFVMinor);
+        //   USB.print(auxFVMinor);
+        //   USB.print("|");
+        //   USB.print(check_md5);
+        //   USB.print("|");
+        //   USB.print(filename);
+        //   USB.println(F("|>"));
+        //   delay(5000);
+        //   break;
         default:
           //USB.println(F("Wrong command!"));  
           break;      
@@ -587,11 +587,11 @@ void CondCalib_R1(long rastvor1, long rastvor2) {
   aux_p1_cond = rastvor1;
   aux_p2_cond = rastvor2;
   EEPROMWriteLong(addr_p1_cond, aux_p1_cond);
-  EEPROMWriteLong(addr_p1_cond, aux_p2_cond);
+  EEPROMWriteLong(addr_p2_cond, aux_p2_cond);
   aux_p1 = EEPROMReadLong(addr_p1);
   aux_p2 = EEPROMReadLong(addr_p2);
   float resist = 0.0;
-  ConductivitySensor.setCalibrationPoints((int)aux_p1_cond, LongToFloat(aux_p1), (int)aux_p2_cond, LongToFloat(aux_p2));
+  ConductivitySensor.setCalibrationPoints(aux_p1_cond, LongToFloat(aux_p1), aux_p2_cond, LongToFloat(aux_p2));
   Water.ON();
   for (int n = 0; n < counter; n++) {
     resist = ConductivitySensor.readConductivity();
@@ -602,7 +602,7 @@ void CondCalib_R1(long rastvor1, long rastvor2) {
   }
   Water.OFF();
   EEPROMWriteLong(addr_p1, FloatToLong(resist));
-  ConductivitySensor.setCalibrationPoints((int) rastvor1, resist, (int)aux_p2_cond, LongToFloat(aux_p2));
+  ConductivitySensor.setCalibrationPoints(rastvor1, resist, aux_p2_cond, LongToFloat(aux_p2));
   if (debug == 1) {
     USB.print(F("Раствор: "));
     USB.println(aux_p1_cond);
@@ -628,7 +628,7 @@ void CondCalib_R2(long rastvor1, long rastvor2) {
   aux_p1 = EEPROMReadLong(addr_p1);
   aux_p2 = EEPROMReadLong(addr_p2);
   float resist = 0.0;
-  ConductivitySensor.setCalibrationPoints((int)aux_p1_cond, LongToFloat(aux_p1), (int)aux_p2_cond, LongToFloat(aux_p2));
+  ConductivitySensor.setCalibrationPoints(aux_p1_cond, LongToFloat(aux_p1), aux_p2_cond, LongToFloat(aux_p2));
   Water.ON();
   for (int n = 0; n < counter; n++) {
     resist = ConductivitySensor.readConductivity();
@@ -639,7 +639,7 @@ void CondCalib_R2(long rastvor1, long rastvor2) {
   }
   Water.OFF();
   EEPROMWriteLong(addr_p2, FloatToLong(resist));
-  ConductivitySensor.setCalibrationPoints((int)aux_p1_cond, LongToFloat(aux_p1), (int)rastvor2, resist);
+  ConductivitySensor.setCalibrationPoints(aux_p1_cond, LongToFloat(aux_p1), rastvor2, resist);
   if (debug == 1) {
     USB.print(F("Раствор: "));
     USB.println(aux_p2_cond);
@@ -676,22 +676,27 @@ void ShowCoeff() {
   cal_temp = LongToFloat(EEPROMReadLong(addr_cal_temp));
   calibration_offset = LongToFloat(EEPROMReadLong(addr_orp_offset));
 
+  USB.println(F("Ph (10, 7, 4):"));
   USB.println(cal_point_10);
   USB.println(cal_point_7);
   USB.println(cal_point_4);
+  USB.println(F("DO (air, zero):"));
   USB.println(air_calibration);
   USB.println(zero_calibration);
+  USB.println(F("Cond solutions:"));
   USB.println(point1_cond);
   USB.println(point2_cond);
+  USB.println(F("Cond cal points:"));
   USB.println(point1_cal);
   USB.println(point2_cal);
+  USB.println(F("Cal temp:"));
   USB.println(cal_temp);
+  USB.println(F("ORP offset:"));
   USB.println(calibration_offset);  
 }
 
 void SesorData() {
   Water.ON();
-  delay(2000);
   Turbidity.ON();
   delay(2000);
 
@@ -701,28 +706,64 @@ void SesorData() {
 
     // Read the ph sensor
   value_pH = pHSensor.readpH();
+  if (debug == 1) {
+    USB.print(F("Ph_volt: "));
+    USB.println(value_pH);
+  }
     // Read the temperature sensor
     //value_temp = TemperatureSensor.readTemperature();
     //value_temp = Turbidity.getTemperature();
   //value_temp = readTemp();
   value_temp = readTempAuto();
+  if (debug == 1) {
+    USB.print(F("Temp: "));
+    USB.println(value_temp);
+  }
   value_turbidity = Turbidity.getTurbidity();
   // Convert the value read with the information obtained in calibration
-  value_pH_calculated = pHSensor.pHConversion(value_pH,value_temp);  
+  value_pH_calculated = pHSensor.pHConversion(value_pH,value_temp); 
+  if (debug == 1) {
+    USB.print(F("Ph final: "));
+    USB.println(value_pH_calculated);
+  } 
   // Reading of the ORP sensor
   value_orp = ORPSensor.readORP();
+  if (debug == 1) {
+    USB.print(F("ORP volts: "));
+    USB.println(value_orp);
+  } 
   // Apply the calibration offset
   value_orp_calculated = value_orp - calibration_offset;
+  if (debug == 1) {
+    USB.print(F("ORP final: "));
+    USB.println(value_orp_calculated);
+  } 
     // Reading of the DI sensor
     //value_di = DISensor.readDI();
     // Reading of the ORP sensor
   value_do = DOSensor.readDO();
+  if (debug == 1) {
+    USB.print(F("DO volts: "));
+    USB.println(value_do);
+  } 
     // Conversion from volts into dissolved oxygen percentage
   value_do_calculated = DOSensor.DOConversion(value_do);
+  if (debug == 1) {
+    USB.print(F("DO final: "));
+    USB.println(value_do_calculated);
+  } 
     // Reading of the Conductivity sensor
   value_cond = ConductivitySensor.readConductivity();
+  if (debug == 1) {
+    USB.print(F("Cond before calc: "));
+    USB.println(value_cond);
+  } 
     // Conversion from resistance into ms/cm
   value_cond_calculated = ConductivitySensor.conductivityConversion(value_cond);  
+  if (debug == 1) {
+    USB.print(F("Cond final: "));
+    USB.println(value_cond_calculated);
+  } 
   
     ///////////////////////////////////////////
     // 3. Turn off the sensors

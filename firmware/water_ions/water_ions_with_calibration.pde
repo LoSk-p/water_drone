@@ -93,11 +93,25 @@ long aux_D_p3 = 0;
 
 // A,B,D,C - any ion sensor
 // F - pt1000 sensor
-ionSensorClass SensorSocketA(SOCKET_A);
-ionSensorClass SensorSocketB(SOCKET_B);
-ionSensorClass SensorSocketC(SOCKET_C);
-ionSensorClass SensorSocketD(SOCKET_D);
+ionSensorClass SensorSocketA(SOCKET_A); // socket 1 - NH4
+ionSensorClass SensorSocketB(SOCKET_B); // socket 2 - NO3
+ionSensorClass SensorSocketC(SOCKET_C); // socket 3 - NO2
+ionSensorClass SensorSocketD(SOCKET_D); // socket 4 - Cl
 pt1000Class tempSensor;
+
+// Calibration concentrations
+float concent_A_1 = 4.0;
+float concent_A_2 = 20.0;
+float concent_A_3 = 40.0;
+float concent_B_1 = 132.0;
+float concent_B_2 = 660.0;
+float concent_B_3 = 1320.0;
+float concent_C_1 = 10.0;
+float concent_C_2 = 100.0;
+float concent_C_3 = 1000.0;
+float concent_D_1 = 75.0;
+float concent_D_2 = 375.0;
+float concent_D_3 = 750.0;
 
 // calibration concentrations
 #define point1 10.0
@@ -144,16 +158,19 @@ void setup() {
 
     delay(1000);
 
-    const float concentrations[] = {point1, point2, point3};
+    const float concentrations_A[] = {concent_A_1, concent_A_2, concent_A_3};
+    const float concentrations_B[] = {concent_B_1, concent_B_2, concent_B_3};
+    const float concentrations_C[] = {concent_C_1, concent_C_2, concent_C_3};
+    const float concentrations_D[] = {concent_D_1, concent_D_2, concent_D_3};
     const float voltages_A[] = {A_point1_V, A_point2_V, A_point3_V};
     const float voltages_B[] = {B_point1_V, B_point2_V, B_point3_V};
     const float voltages_C[] = {C_point1_V, C_point2_V, C_point3_V};
     const float voltages_D[] = {D_point1_V, D_point2_V, D_point3_V};
 
-    SensorSocketA.setCalibrationPoints(voltages_A, concentrations, 3);
-    SensorSocketB.setCalibrationPoints(voltages_B, concentrations, 3);
-    SensorSocketC.setCalibrationPoints(voltages_C, concentrations, 3);
-    SensorSocketD.setCalibrationPoints(voltages_D, concentrations, 3);
+    SensorSocketA.setCalibrationPoints(voltages_A, concentrations_A, 3);
+    SensorSocketB.setCalibrationPoints(voltages_B, concentrations_B, 3);
+    SensorSocketC.setCalibrationPoints(voltages_C, concentrations_C, 3);
+    SensorSocketD.setCalibrationPoints(voltages_D, concentrations_D, 3);
     // pHSensor.setpHCalibrationPoints(cal_point_10, cal_point_7, cal_point_4, cal_temp);
 
     // frame.setID(node_ID);
@@ -230,73 +247,73 @@ void loop() {
         case 97: // a          
           delay(1000);
           USB.println(F("#?"));
-          Socket_A_Calib(10);
+          Socket_A_Calib(concent_A_1);
           USB.println(F("#a"));                   
           break;
         case 98: // b
           delay(1000);
           USB.println(F("#?"));
-          Socket_A_Calib(100);
+          Socket_A_Calib(concent_A_2);
           USB.println(F("#b"));
           break;
         case 99: // c
           delay(1000);
           USB.println(F("#?"));
-          Socket_A_Calib(1000);
+          Socket_A_Calib(concent_A_3);
           USB.println(F("#c"));
           break;
         case 107: // k
           delay(1000);
           USB.println(F("#?"));
-          Socket_B_Calib(10);
+          Socket_B_Calib(concent_B_1);
           USB.println(F("#k"));
           break;
         case 108: // l
           delay(1000);
           USB.println(F("#?"));
-          Socket_B_Calib(100);
+          Socket_B_Calib(concent_B_2);
           USB.println(F("#l"));
           break;
         case 109: // m
           delay(1000);
           USB.println(F("#?"));
-          Socket_B_Calib(1000);
+          Socket_B_Calib(concent_B_3);
           USB.println(F("#m"));
           break;
         case 110: // n
           delay(1000);
           USB.println(F("#?"));
-          Socket_D_Calib(10);
+          Socket_D_Calib(concent_D_1);
           USB.println(F("#n"));
           break;
         case 111: // o
           delay(1000);
           USB.println(F("#?"));
-          Socket_D_Calib(100);
+          Socket_D_Calib(concent_D_2);
           USB.println(F("#0"));
           break;
         case 112: // p
           delay(1000);
           USB.println(F("#?"));
-          Socket_C_Calib(10);
+          Socket_C_Calib(concent_C_1);
           USB.println(F("#p"));
           break;
         case 113: // q
           delay(1000);
           USB.println(F("#?"));
-          Socket_C_Calib(100);
+          Socket_C_Calib(concent_C_2);
           USB.println(F("#q"));
           break;
         case 114: // r
           delay(1000);
           USB.println(F("#?"));
-          Socket_C_Calib(1000);
+          Socket_C_Calib(concent_C_3);
           USB.println(F("#r"));
           break;
         case 115: // s
           delay(1000);
           USB.println(F("#?"));
-          Socket_D_Calib(1000);
+          Socket_D_Calib(concent_D_3);
           USB.println(F("#s"));
           break;
 //        case 102: // f
@@ -370,7 +387,7 @@ long EEPROMReadLong(int address1) {
 void Socket_A_Calib(int conc_temp)
 {
   float volts = 0.0;
-  float concent[] = {10.0, 100.0, 1000.0};
+  float concent[] = {concent_A_1, concent_A_2, concent_A_3};
   //float temp_volts_A_Cal[] = {0.0, 0.0, 0.0};
   aux_A_p1 = EEPROMReadLong(addr_A_p1);
   aux_A_p2 = EEPROMReadLong(addr_A_p2);
@@ -382,23 +399,25 @@ void Socket_A_Calib(int conc_temp)
     volts = SensorSocketA.read();
     if (debug == 1) {
       USB.print(volts);
+      USB.print(F(" - "));
+      USB.println(i);
     }
     delay(zadergka);
   }
   SWIonsBoard.OFF();
-  if (conc_temp == 10)
+  if (conc_temp == concent_A_1)
   {
     EEPROMWriteLong(addr_A_p1, FloatToLong(volts));
     const float temp_volts_A_Cal_10[] = {volts, LongToFloat(aux_A_p2), LongToFloat(aux_A_p3)};
     SensorSocketA.setCalibrationPoints(temp_volts_A_Cal_10, concent, 3);
   }
-  else if (conc_temp == 100)
+  else if (conc_temp == concent_A_2)
   {
     EEPROMWriteLong(addr_A_p2, FloatToLong(volts));
     const float temp_volts_A_Cal_100[] = {LongToFloat(aux_A_p1), volts, LongToFloat(aux_A_p3)};
     SensorSocketA.setCalibrationPoints(temp_volts_A_Cal_100, concent, 3);
   }
-  else if (conc_temp == 1000)
+  else if (conc_temp == concent_A_3)
   {
     EEPROMWriteLong(addr_A_p3, FloatToLong(volts));
     const float temp_volts_A_Cal_1000[] = {LongToFloat(aux_A_p1), LongToFloat(aux_A_p2), volts};
@@ -422,7 +441,7 @@ void Socket_A_Calib(int conc_temp)
 void Socket_B_Calib(int conc_temp)
 {
   float volts = 0.0;
-  float concent[] = {10.0, 100.0, 1000.0};  
+  float concent[] = {concent_B_1, concent_B_2, concent_B_3};  
   aux_B_p1 = EEPROMReadLong(addr_B_p1);
   aux_B_p2 = EEPROMReadLong(addr_B_p2);
   aux_B_p3 = EEPROMReadLong(addr_B_p3);
@@ -433,23 +452,25 @@ void Socket_B_Calib(int conc_temp)
     volts = SensorSocketB.read();
     if (debug == 1) {
       USB.print(volts);
+      USB.print(F(" - "));
+      USB.println(i);
     }
     delay(zadergka);
   }
   SWIonsBoard.OFF();
-  if (conc_temp == 10)
+  if (conc_temp == concent_B_1)
   {
     EEPROMWriteLong(addr_B_p1, FloatToLong(volts));
     const float temp_volts_B_Cal_10[] = {volts, LongToFloat(aux_B_p2), LongToFloat(aux_B_p3)};
     SensorSocketB.setCalibrationPoints(temp_volts_B_Cal_10, concent, 3);
   }
-  else if (conc_temp == 100)
+  else if (conc_temp == concent_B_2)
   {
     EEPROMWriteLong(addr_B_p2, FloatToLong(volts));
     const float temp_volts_B_Cal_100[] = {LongToFloat(aux_B_p1), volts, LongToFloat(aux_B_p3)};
     SensorSocketB.setCalibrationPoints(temp_volts_B_Cal_100, concent, 3);
   }
-  else if (conc_temp == 1000)
+  else if (conc_temp == concent_B_3)
   {
     EEPROMWriteLong(addr_B_p3, FloatToLong(volts));
     const float temp_volts_B_Cal_1000[] = {LongToFloat(aux_B_p1), LongToFloat(aux_B_p2), volts};
@@ -473,7 +494,7 @@ void Socket_B_Calib(int conc_temp)
 void Socket_C_Calib(int conc_temp)
 {
   float volts = 0.0;
-  float concent[] = {10.0, 100.0, 1000.0};
+  float concent[] = {concent_C_1, concent_C_2, concent_C_3};
   float temp_volts_C_Cal[] = {0.0, 0.0, 0.0};
   aux_C_p1 = EEPROMReadLong(addr_C_p1);
   aux_C_p2 = EEPROMReadLong(addr_C_p2);
@@ -485,23 +506,25 @@ void Socket_C_Calib(int conc_temp)
     volts = SensorSocketC.read();
     if (debug == 1) {
       USB.print(volts);
+      USB.print(F(" - "));
+      USB.println(i);
     }
     delay(zadergka);
   }
   SWIonsBoard.OFF();
-  if (conc_temp == 10)
+  if (conc_temp == concent_C_1)
   {
     EEPROMWriteLong(addr_C_p1, FloatToLong(volts));
     const float temp_volts_C_Cal_10[] = {volts, LongToFloat(aux_C_p2), LongToFloat(aux_C_p3)};
     SensorSocketC.setCalibrationPoints(temp_volts_C_Cal_10, concent, 3);
   }
-  else if (conc_temp == 100)
+  else if (conc_temp == concent_C_2)
   {
     EEPROMWriteLong(addr_C_p2, FloatToLong(volts));
     const float temp_volts_C_Cal_100[] = {LongToFloat(aux_C_p1), volts, LongToFloat(aux_C_p3)};
     SensorSocketC.setCalibrationPoints(temp_volts_C_Cal_100, concent, 3);
   }
-  else if (conc_temp == 1000)
+  else if (conc_temp == concent_C_3)
   {
     EEPROMWriteLong(addr_C_p3, FloatToLong(volts));
     const float temp_volts_C_Cal_1000[] = {LongToFloat(aux_C_p1), LongToFloat(aux_C_p2), volts};
@@ -525,7 +548,7 @@ void Socket_C_Calib(int conc_temp)
 void Socket_D_Calib(int conc_temp)
 {
   float volts = 0.0;
-  float concent[] = {10.0, 100.0, 1000.0};
+  float concent[] = {concent_D_1, concent_D_2, concent_D_3};
   float temp_volts_D_Cal[] = {0.0, 0.0, 0.0};
   aux_D_p1 = EEPROMReadLong(addr_D_p1);
   aux_D_p2 = EEPROMReadLong(addr_D_p2);
@@ -537,23 +560,25 @@ void Socket_D_Calib(int conc_temp)
     volts = SensorSocketD.read();
     if (debug == 1) {
       USB.print(volts);
+      USB.print(F(" - "));
+      USB.println(i);
     }
     delay(zadergka);
   }
   SWIonsBoard.OFF();
-  if (conc_temp == 10)
+  if (conc_temp == concent_D_1)
   {
     EEPROMWriteLong(addr_D_p1, FloatToLong(volts));
     const float temp_volts_D_Cal_10[] = {volts, LongToFloat(aux_D_p2), LongToFloat(aux_D_p3)};
     SensorSocketD.setCalibrationPoints(temp_volts_D_Cal_10, concent, 3);
   }
-  else if (conc_temp == 100)
+  else if (conc_temp == concent_D_2)
   {
     EEPROMWriteLong(addr_D_p2, FloatToLong(volts));
     const float temp_volts_D_Cal_100[] = {LongToFloat(aux_D_p1), volts, LongToFloat(aux_D_p3)};
     SensorSocketD.setCalibrationPoints(temp_volts_D_Cal_100, concent, 3);
   }
-  else if (conc_temp == 1000)
+  else if (conc_temp == concent_D_3)
   {
     EEPROMWriteLong(addr_D_p3, FloatToLong(volts));
     const float temp_volts_D_Cal_1000[] = {LongToFloat(aux_D_p1), LongToFloat(aux_D_p2), volts};
@@ -607,18 +632,47 @@ void ShowCoeff() {
 //  USB.println(cal_point_10);
 //  USB.println(cal_point_7);
 //  USB.println(cal_point_4);
+  USB.println(F("NH4: concent - volts"));
+  USB.print(concent_A_1);
+  USB.print(F(" - "));
   USB.println(A_point1_V);
+  USB.print(concent_A_2);
+  USB.print(F(" - "));
   USB.println(A_point2_V);
+  USB.print(concent_A_3);
+  USB.print(F(" - "));
   USB.println(A_point3_V);
+  USB.println(F("NO3: concent - volts"));
+  USB.print(concent_B_1);
+  USB.print(F(" - "));
   USB.println(B_point1_V);
+  USB.print(concent_B_2);
+  USB.print(F(" - "));
   USB.println(B_point2_V);
+  USB.print(concent_B_3);
+  USB.print(F(" - "));
   USB.println(B_point3_V);
+  USB.println(F("NO2: concent - volts"));
+  USB.print(concent_C_1);
+  USB.print(F(" - "));
   USB.println(C_point1_V);
+  USB.print(concent_C_2);
+  USB.print(F(" - "));
   USB.println(C_point2_V);
+  USB.print(concent_C_3);
+  USB.print(F(" - "));
   USB.println(C_point3_V);
+  USB.println(F("Cl: concent - volts"));
+  USB.print(concent_D_1);
+  USB.print(F(" - "));
   USB.println(D_point1_V);
+  USB.print(concent_D_2);
+  USB.print(F(" - "));
   USB.println(D_point2_V);
+  USB.print(concent_D_3);
+  USB.print(F(" - "));
   USB.println(D_point3_V);
+  USB.println(F("temp: concent - volts"));
   USB.println(cal_temp);  
 }
 
@@ -634,15 +688,39 @@ void SensorData() {
     // delay(500);
     SOCK_A_Raw = SensorSocketA.read();
     SOCK_A_Calc = SensorSocketA.calculateConcentration(SOCK_A_Raw);
+    if (debug == 1) {
+      USB.print(F("NH4 volts: "));
+      USB.print(SOCK_A_Raw);
+      USB.print(F(", value: "));
+      USB.println(SOCK_A_Calc);
+    }
     delay(500);
     SOCK_B_Raw = SensorSocketB.read();
     SOCK_B_Calc = SensorSocketB.calculateConcentration(SOCK_B_Raw);
+    if (debug == 1) {
+      USB.print(F("NO3 volts: "));
+      USB.print(SOCK_B_Raw);
+      USB.print(F(", value: "));
+      USB.println(SOCK_B_Calc);
+    }
     delay(500);
     SOCK_C_Raw = SensorSocketC.read();
     SOCK_C_Calc = SensorSocketC.calculateConcentration(SOCK_C_Raw);
+    if (debug == 1) {
+      USB.print(F("NO2 volts: "));
+      USB.print(SOCK_C_Raw);
+      USB.print(F(", value: "));
+      USB.println(SOCK_C_Calc);
+    }
     delay(500);
     SOCK_D_Raw = SensorSocketD.read();
     SOCK_D_Calc = SensorSocketD.calculateConcentration(SOCK_D_Raw);
+    if (debug == 1) {
+      USB.print(F("Cl volts: "));
+      USB.print(SOCK_D_Raw);
+      USB.print(F(", value: "));
+      USB.println(SOCK_D_Calc);
+    }
     delay(500);  
     ///////////////////////////////////////////
     // 3. Turn off the sensors

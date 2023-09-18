@@ -121,6 +121,7 @@ class WaspmoteSensors:
                 "NO2": "None",
                 "NO3": "None",
                 "NH4": "None",
+                "Cl": "None"
             }
         while not rospy.is_shutdown():
             time.sleep(1)
@@ -153,10 +154,11 @@ class WaspmoteSensors:
                             data["conductivity"] = data_prev[3]
                             data["ORP"] = data_prev[5]
                         elif data_prev[0] == "$i":
-                            data["temperature"] = data_prev[1]
-                            data["NO2"] = data_prev[2]
+                            # data["temperature"] = data_prev[1]
+                            data["NH4"] = data_prev[2]
                             data["NO3"] = data_prev[3]
-                            data["NH4"] = data_prev[4]
+                            data["NO2"] = data_prev[4]
+                            data["Cl"] = data_prev[5]
                         data["timestamp"] = self.timestamp
                         data["lat"] = self.lat
                         data["lon"] = self.lon
@@ -179,6 +181,7 @@ class WaspmoteSensors:
                                 "NO2": "None",
                                 "NO3": "None",
                                 "NH4": "None",
+                                "Cl": "None"
                             }
 
 
