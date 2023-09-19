@@ -53,6 +53,7 @@ find_package(catkin REQUIRED COMPONENTS
    FILES
    SensorData.msg
    WaterLevelSensorsData.msg
+   NewPump.msg
  )
 
 # Generate services in the 'srv' folder

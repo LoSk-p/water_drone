@@ -112,10 +112,10 @@ class Pumps:
 
     def _create_new_pump_message(self, pump_number: int) -> NewPump:
         message = NewPump()
-        message.lat = self.lat
-        message.lon = self.lon
-        message.timestamp = self.timestamp
-        message.pump_number = pump_number
+        message.lat = str(self.lat)
+        message.lon = str(self.lon)
+        message.timestamp = str(self.timestamp)
+        message.pump_number = str(pump_number)
         return message
 
     def pump_in(self, number_of_pump: int):
