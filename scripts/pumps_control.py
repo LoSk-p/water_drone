@@ -132,8 +132,8 @@ class Pumps:
         GPIO.output(self.config["rpi_pins"][f"pump{number_of_pump}"], GPIO.LOW)
         time.sleep(PUMP_IN_DELAY)
         GPIO.output(self.config["rpi_pins"][f"pump{number_of_pump}"], GPIO.HIGH)
-        self.pump_out_main()
         self.start_pause_mission("start")
+        self.pump_out_main()
         rospy.loginfo("Finished pump in water")
 
     def send_sensors_data(self):

@@ -16,7 +16,7 @@ int ShowData = 2;
 int debug = 0;
 
 // Время калибровки
-int counter = 240;
+int counter = 100;
 int zadergka = 500;
 
 //версия прошивки (хранится в EEPROM)

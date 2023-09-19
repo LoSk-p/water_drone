@@ -132,7 +132,7 @@ class GetSensors:
             self.gps_counter += 1
 
     def callback_sensors(self, data: SensorData) -> None:
-        rospy.loginfo(f"armed: {self.is_armed}, measure: {self.measure}")
+        # rospy.loginfo(f"armed: {self.is_armed}, measure: {self.measure}")
         if self.is_armed and self.measure:
             data_dict = message_converter.convert_ros_message_to_dictionary(data) 
             self.measurement = easy_mean(median(data_dict))
