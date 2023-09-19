@@ -509,18 +509,18 @@ void pHSensorCalibP4() {
 void ORPSensorCalib() {
   float orp_calib = 0.0;
   float orp_calculated = 0.0;
-  aux_orp_offset = EEPROMReadLong(addr_orp_offset);
+  aux_orp_offset = LongToFloat(EEPROMReadLong(addr_orp_offset));
   Water.ON();
   for (int k = 0; k < counter; k++) {
-    orp_calib = ORPSensor.readORP();
-    orp_calculated = orp_calib - LongToFloat(aux_orp_offset);
+    orp_calib = 1000*ORPSensor.readORP();
+    // orp_calculated = orp_calib - LongToFloat(aux_orp_offset);
     if (debug == 1) {
-      USB.println(orp_calculated);
+      USB.println(orp_calib);
     }
     delay(zadergka);
   }
   Water.OFF();
-  aux_orp_offset = orp_calculated - 0.225;
+  aux_orp_offset = orp_calib - 225;
   EEPROMWriteLong(addr_orp_offset, FloatToLong(aux_orp_offset));
   calibration_offset = LongToFloat(EEPROMReadLong(addr_orp_offset));
   if (debug == 1) {
@@ -727,7 +727,7 @@ void SesorData() {
     USB.println(value_pH_calculated);
   } 
   // Reading of the ORP sensor
-  value_orp = ORPSensor.readORP();
+  value_orp = 1000*ORPSensor.readORP();
   if (debug == 1) {
     USB.print(F("ORP volts: "));
     USB.println(value_orp);

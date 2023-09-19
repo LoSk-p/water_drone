@@ -15,7 +15,6 @@ import getpass
 from water_drone.msg import SensorData
 from water_drone.srv import RunPump
 from mavros_msgs.srv import CommandLong
-from mavros_msgs.srv import CommandLongRequest, CommandLongResponse
 from mavros_msgs.msg import CommandCode
 
 MEASURE_TIMEOUT = 300
@@ -77,10 +76,12 @@ class WaspmoteSensors:
         self.data_msg.pH = data["pH"]
         self.data_msg.conductivity = data["conductivity"]
         self.data_msg.temperature = data["temperature"]
+        self.data_msg.oxxygen = data["oxxygen"]
         self.data_msg.ORP = data["ORP"]
         self.data_msg.NO2 = data["NO2"]
         self.data_msg.NO3 = data["NO3"]
         self.data_msg.NH4 = data["NH4"]
+        self.data_msg.Cl = data["Cl"]
 
     # def create_folder(self) -> None:
     #     if not (os.path.isdir(f"/home/{self.username}/data")):
@@ -94,15 +95,19 @@ class WaspmoteSensors:
     #         rospy.loginfo("New data folders created")
 
     def publish_data(self) -> None:
+        ports = glob.glob('/dev/ttyUSB[0-9]')
+        while len(ports) < 2:
+            rospy.loginfo(f"Wait for USB ports. Now: {ports}")
+            time.sleep(5)
         ser = serial.Serial(
-            "/dev/ttyUSB0",
+            ports[0],
             baudrate=115200,
             parity=serial.PARITY_NONE,
             stopbits=serial.STOPBITS_ONE,
             bytesize=serial.EIGHTBITS,
         )
         ser1 = serial.Serial(
-            "/dev/ttyUSB1",
+            ports[1],
             baudrate=115200,
             parity=serial.PARITY_NONE,
             stopbits=serial.STOPBITS_ONE,
@@ -117,6 +122,7 @@ class WaspmoteSensors:
                 "temperature": "None",
                 "pH": "None",
                 "conductivity": "None",
+                "oxxygen": "None",
                 "ORP": "None",
                 "NO2": "None",
                 "NO3": "None",
@@ -153,6 +159,7 @@ class WaspmoteSensors:
                             data["pH"] = data_prev[2]
                             data["conductivity"] = data_prev[3]
                             data["ORP"] = data_prev[5]
+                            data["oxxygen"] = data_prev[4]
                         elif data_prev[0] == "$i":
                             # data["temperature"] = data_prev[1]
                             data["NH4"] = data_prev[2]

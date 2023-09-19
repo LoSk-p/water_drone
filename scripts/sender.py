@@ -10,11 +10,19 @@ from robonomicsinterface import Account, Datalog
 import os
 from std_msgs.msg import String
 from mavros_msgs.msg import State
+from uuid import getnode as get_mac
 import json
 import getpass
+import hashlib
 from copy import deepcopy
+from water_drone.msg import NewPump
 
 USE_IPFS = False
+
+def _generate_pubkey(id: str) -> str:
+    verify_key = hashlib.sha256(id.encode("utf-8"))
+    verify_key_hex = verify_key.hexdigest()
+    return str(verify_key_hex)
 
 class Sender:
     def __init__(self) -> None:
@@ -26,6 +34,7 @@ class Sender:
         self.current_date = str(datetime.datetime.now().strftime("%Y_%m_%d"))
         rospy.loginfo(f"Sender is ready. Current date {self.current_date}")
         rospy.Subscriber("/new_file", String, self._parse)
+        rospy.Subscriber("/new_pump", NewPump, self._parse_new_pump)
         while not rospy.is_shutdown():
             pass
 
@@ -47,12 +56,31 @@ class Sender:
                 rospy.logerr(f"Unexpected exception in pinning file {e}")
                 return
 
+    def create_datalog(self, data_for_datalog: str):
+        account = Account(seed=self.config["robonomics"]["seed"])
+        try:
+            datalog = Datalog(account)
+            rospy.loginfo(f"Start creating datalog witn {data_for_datalog}")
+            transaction_hash = datalog.record(data_for_datalog)
+            rospy.loginfo(
+                f"Ipfs hash sent to Robonomics Parachain. Transaction hash is: {transaction_hash}"
+            )
+
+        except Exception as e:
+            rospy.logerr(f"Failed to send hash to Robonomics with: {e}")
+            time.sleep(10)
+
+    def _parse_new_pump(self, data):
+        mac = f"{get_mac()}_{time.time()}"
+        public_key = _generate_pubkey(str(mac))
+        json_for_datalog = {public_key: {"model": 2, "geo": f"{data.lat},{data.lon}", "measurements": [{"timestamp": data.timestamp, "pump_number": data.pump_number}]}}
+        self.create_datalog(json.dumps(json_for_datalog))
+
     def _parse(self, from_topic) -> None:
         list_of_files = glob.glob(f"/home/{self.username}/data/{self.current_date}/*.json")
         latest_file = max(list_of_files, key=os.path.getctime)
         if latest_file != from_topic.data:
             list_of_files.remove(latest_file)
-        account = Account(seed=self.config["robonomics"]["seed"])
         for file_path in list_of_files:
             if USE_IPFS:
                 ipfs_hash = self.pin_file_to_pinata(file_path)
@@ -74,21 +102,11 @@ class Sender:
                         rospy.loginfo(e)
                         dict_from_file = {}
                         data_for_datalog = ""
-            try:
-                datalog = Datalog(account)
-                rospy.loginfo(f"Start creating datalog witn {data_for_datalog}")
-                transaction_hash = datalog.record(data_for_datalog)
-                rospy.loginfo(
-                    f"Ipfs hash sent to Robonomics Parachain. Transaction hash is: {transaction_hash}"
-                )
-                os.replace(
-                    file_path,
-                    f"/home/{self.username}/data/{self.current_date}/sent/{file_path.split('/')[-1]}",
-                )
-
-            except Exception as e:
-                rospy.logerr(f"Failed to send hash to Robonomics with: {e}")
-                time.sleep(10)
+            self.create_datalog(data_for_datalog)
+            os.replace(
+                file_path,
+                f"/home/{self.username}/data/{self.current_date}/sent/{file_path.split('/')[-1]}",
+            )
 
 
 sender = Sender()

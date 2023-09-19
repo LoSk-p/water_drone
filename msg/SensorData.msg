@@ -1,7 +1,9 @@
 string conductivity
 string pH
 string temperature
+string oxxygen
 string ORP
 string NO2
 string NO3
 string NH4
+string Cl
