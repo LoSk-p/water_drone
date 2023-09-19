@@ -11,6 +11,7 @@ import glob
 import json
 from sensor_msgs.msg import NavSatFix
 import getpass
+import subprocess
 
 from water_drone.msg import SensorData
 from water_drone.srv import RunPump
@@ -227,6 +228,28 @@ class WaspmoteSensors:
                                 }
             except Exception as e:
                 rospy.logerr(f"Exception in get sensors data: {e}")
+                subprocess.call(["uhubctl", "-l", "2", "-a", "off"])
+                time.sleep(1)
+                subprocess.call(["uhubctl", "-l", "2", "-a", "on"])
+                ports = glob.glob('/dev/ttyUSB[0-9]')
+                while len(ports) < 2:
+                    rospy.loginfo(f"Wait for USB ports. Now: {ports}")
+                    time.sleep(5)
+                    ports = glob.glob('/dev/ttyUSB[0-9]')
+                ser = serial.Serial(
+                    ports[0],
+                    baudrate=115200,
+                    parity=serial.PARITY_NONE,
+                    stopbits=serial.STOPBITS_ONE,
+                    bytesize=serial.EIGHTBITS,
+                )
+                ser1 = serial.Serial(
+                    ports[1],
+                    baudrate=115200,
+                    parity=serial.PARITY_NONE,
+                    stopbits=serial.STOPBITS_ONE,
+                    bytesize=serial.EIGHTBITS,
+                )
 
 
 WaspmoteSensors().publish_data()
