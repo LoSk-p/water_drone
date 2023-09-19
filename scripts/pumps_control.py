@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-from email import message
 import RPi.GPIO as GPIO
 import rospy
 import time
