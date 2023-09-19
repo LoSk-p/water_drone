@@ -79,16 +79,16 @@ class Pumps:
 
     def check_low_sensor(self):
         """Return True if there is no water in low sensor"""
-        self.low_sensor_values.append(GPIO.input(self.config["rpi_pins"]["sensor_down"]))
-        if len(self.low_sensor_values) >= 5:
-            self.low_sensor_values.pop(0)
+        # self.low_sensor_values.append(GPIO.input(self.config["rpi_pins"]["sensor_down"]))
+        # if len(self.low_sensor_values) >= 5:
+        #     self.low_sensor_values.pop(0)
         return all(self.low_sensor_values)
 
     def check_up_sensor(self) -> bool:
         """Return True if there is water in up sensor"""
-        self.up_sensor_values.append(GPIO.input(self.config["rpi_pins"]["sensor_up"]))
-        if len(self.up_sensor_values) >= 5:
-            self.up_sensor_values.pop(0)
+        # self.up_sensor_values.append(GPIO.input(self.config["rpi_pins"]["sensor_up"]))
+        # if len(self.up_sensor_values) >= 5:
+        #     self.up_sensor_values.pop(0)
         return all([not val for val in self.up_sensor_values])
     
     def pump_in_main(self):
@@ -134,7 +134,10 @@ class Pumps:
         GPIO.output(self.config["rpi_pins"][f"pump{number_of_pump}"], GPIO.HIGH)
         self.start_pause_mission("start")
         self.pump_out_main()
-        rospy.loginfo("Finished pump in water")
+        GPIO.output(self.config["rpi_pins"][f"pump{number_of_pump}"], GPIO.LOW)
+        time.sleep(1.5)
+        GPIO.output(self.config["rpi_pins"][f"pump{number_of_pump}"], GPIO.HIGH)
+        rospy.loginfo(f"Finished pump in water in pump {number_of_pump}")
 
     def send_sensors_data(self):
         while not rospy.is_shutdown():
@@ -142,6 +145,12 @@ class Pumps:
             data.low_sensor = GPIO.input(self.config["rpi_pins"]["sensor_down"])
             data.up_sensor = GPIO.input(self.config["rpi_pins"]["sensor_up"])
             self.publisher.publish(data)
+            self.up_sensor_values.append(GPIO.input(self.config["rpi_pins"]["sensor_up"]))
+            if len(self.up_sensor_values) >= 5:
+                self.up_sensor_values.pop(0)
+            self.low_sensor_values.append(GPIO.input(self.config["rpi_pins"]["sensor_down"]))
+            if len(self.low_sensor_values) >= 5:
+                self.low_sensor_values.pop(0)
             time.sleep(0.5)
 
 Pumps().send_sensors_data()

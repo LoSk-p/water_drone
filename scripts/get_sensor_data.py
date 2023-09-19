@@ -99,6 +99,7 @@ class WaspmoteSensors:
         while len(ports) < 2:
             rospy.loginfo(f"Wait for USB ports. Now: {ports}")
             time.sleep(5)
+            ports = glob.glob('/dev/ttyUSB[0-9]')
         ser = serial.Serial(
             ports[0],
             baudrate=115200,
@@ -131,65 +132,101 @@ class WaspmoteSensors:
             }
         while not rospy.is_shutdown():
             time.sleep(1)
-            if self.is_armed and self.measure:
-                if ser.inWaiting() > 0 or ser1.inWaiting() > 0:
-                    if ser.inWaiting() > 0:
-                        data_read = str(ser.readline())
-                        rospy.loginfo(f"Sensors data: {data_read}")
-                    if ser1.inWaiting() > 0:
-                        data_read = str(ser1.readline())
-                        rospy.loginfo(f"Sensors data 1: {data_read}")
-                    if time.time() - self.last_time > self.interval:
-                        rospy.loginfo("in if new file get_sensor")
-                        f = open(
-                            f"/home/{self.username}/data/{self.current_date}/sensors_data/{time.time()}.json", "w"
-                        )
-                        self.last_time = time.time()
-                    else:
-                        list_of_files = glob.glob(
-                            f"/home/{self.username}/data/{self.current_date}/sensors_data/*.json"
-                        )
-                        latest_file = max(list_of_files, key=os.path.getctime)
-                        f = open(latest_file, "a")
-                    data_prev = data_read[2:]
-                    if data_prev[0] == "$":
-                        data_prev = data_prev.split("|")
-                        if data_prev[0] == "$w":
-                            data["temperature"] = data_prev[1]
-                            data["pH"] = data_prev[2]
-                            data["conductivity"] = data_prev[3]
-                            data["ORP"] = data_prev[5]
-                            data["oxxygen"] = data_prev[4]
-                        elif data_prev[0] == "$i":
-                            # data["temperature"] = data_prev[1]
-                            data["NH4"] = data_prev[2]
-                            data["NO3"] = data_prev[3]
-                            data["NO2"] = data_prev[4]
-                            data["Cl"] = data_prev[5]
-                        data["timestamp"] = self.timestamp
-                        data["lat"] = self.lat
-                        data["lon"] = self.lon
-                        if data["pH"] != "None" and data["NO2"] != "None":
-                            rospy.loginfo(f"JSON sensor data: {data}")
-                            data_time = data.copy()
-                            data_time["time"] = time.time()
-                            f.write(f"{data_time}\n")
-                            f.close()
-                            self.get_msg_data(data)
-                            pub.publish(self.data_msg)
-                            data = {
-                                "timestamp": "None",
-                                "lat": "None",
-                                "lon": "None",
-                                "temperature": "None",
-                                "pH": "None",
-                                "conductivity": "None",
-                                "ORP": "None",
-                                "NO2": "None",
-                                "NO3": "None",
-                                "NH4": "None",
-                                "Cl": "None"
-                            }
+            try:
+                if self.is_armed and self.measure:
+                    if ser.inWaiting() > 0 or ser1.inWaiting() > 0:
+                        if ser.inWaiting() > 0:
+                            data_read = str(ser.readline())
+                            rospy.loginfo(f"Sensors data: {data_read}")
+                        if ser1.inWaiting() > 0:
+                            data_read = str(ser1.readline())
+                            rospy.loginfo(f"Sensors data 1: {data_read}")
+                        if time.time() - self.last_time > self.interval:
+                            rospy.loginfo("in if new file get_sensor")
+                            f = open(
+                                f"/home/{self.username}/data/{self.current_date}/sensors_data/{time.time()}.json", "w"
+                            )
+                            self.last_time = time.time()
+                        else:
+                            list_of_files = glob.glob(
+                                f"/home/{self.username}/data/{self.current_date}/sensors_data/*.json"
+                            )
+                            latest_file = max(list_of_files, key=os.path.getctime)
+                            f = open(latest_file, "a")
+                        data_prev = data_read[2:]
+                        if data_prev[0] == "$":
+                            data_prev = data_prev.split("|")
+                            if data_prev[0] == "$w":
+                                data["temperature"] = data_prev[1]
+                                data["pH"] = data_prev[2]
+                                data["conductivity"] = data_prev[3]
+                                data["ORP"] = data_prev[5]
+                                data["oxxygen"] = data_prev[4]
+                            elif data_prev[0] == "$i":
+                                # data["temperature"] = data_prev[1]
+                                data["NH4"] = data_prev[2]
+                                data["NO3"] = data_prev[3]
+                                data["NO2"] = data_prev[4]
+                                data["Cl"] = data_prev[5]
+                            data["timestamp"] = self.timestamp
+                            data["lat"] = self.lat
+                            data["lon"] = self.lon
+                            if data["pH"] != "None" and data["NO2"] != "None":
+                                rospy.loginfo(f"JSON sensor data: {data}")
+                                data_time = data.copy()
+                                data_time["time"] = time.time()
+                                f.write(f"{data_time}\n")
+                                f.close()
+                                self.get_msg_data(data)
+                                pub.publish(self.data_msg)
+                                data = {
+                                    "timestamp": "None",
+                                    "lat": "None",
+                                    "lon": "None",
+                                    "temperature": "None",
+                                    "pH": "None",
+                                    "conductivity": "None",
+                                    "ORP": "None",
+                                    "NO2": "None",
+                                    "NO3": "None",
+                                    "NH4": "None",
+                                    "Cl": "None"
+                                }                               
+                                data["conductivity"] = data_prev[3]
+                                data["ORP"] = data_prev[5]
+                                data["oxxygen"] = data_prev[4]
+                            elif data_prev[0] == "$i":
+                                # data["temperature"] = data_prev[1]
+                                data["NH4"] = data_prev[2]
+                                data["NO3"] = data_prev[3]
+                                data["NO2"] = data_prev[4]
+                                data["Cl"] = data_prev[5]
+                            data["timestamp"] = self.timestamp
+                            data["lat"] = self.lat
+                            data["lon"] = self.lon
+                            if data["pH"] != "None" and data["NO2"] != "None":
+                                rospy.loginfo(f"JSON sensor data: {data}")
+                                data_time = data.copy()
+                                data_time["time"] = time.time()
+                                f.write(f"{data_time}\n")
+                                f.close()
+                                self.get_msg_data(data)
+                                pub.publish(self.data_msg)
+                                data = {
+                                    "timestamp": "None",
+                                    "lat": "None",
+                                    "lon": "None",
+                                    "temperature": "None",
+                                    "pH": "None",
+                                    "conductivity": "None",
+                                    "ORP": "None",
+                                    "NO2": "None",
+                                    "NO3": "None",
+                                    "NH4": "None",
+                                    "Cl": "None"
+                                }
+            except Exception as e:
+                rospy.logerr(f"Exception in get sensors data: {e}")
 
 
 WaspmoteSensors().publish_data()

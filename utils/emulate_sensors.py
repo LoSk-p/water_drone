@@ -14,10 +14,12 @@ def get_msg_data(data: tp.Dict[str, float]) -> SensorData:
     data_msg.pH = data["pH"]
     data_msg.conductivity = data["conductivity"]
     data_msg.temperature = data["temperature"]
+    data_msg.oxxygen = data["oxxygen"]
     data_msg.ORP = data["ORP"]
     data_msg.NH4 = data["NH4"]
     data_msg.NO2 = data["NO2"]
     data_msg.NO3 = data["NO3"]
+    data_msg.Cl = data["Cl"]
     return data_msg
 
 
@@ -30,10 +32,12 @@ def read_data() -> None:
             "temperature": str(random.randint(1, 100)),
             "pH": str(random.randint(1, 100)),
             "conductivity": str(random.randint(1, 100)),
+            "oxxygen": str(random.randint(1, 100)),
             "ORP": str(random.randint(1, 100)),
             "NH4": str(random.randint(1, 100)),
             "NO2": str(random.randint(1, 100)),
-            "NO3": str(random.randint(1, 100))
+            "NO3": str(random.randint(1, 100)),
+            "Cl": str(random.randint(1, 100))
         }
         print(data)
         data_msg = get_msg_data(data)
