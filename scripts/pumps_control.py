@@ -27,6 +27,7 @@ class Pumps:
         self.main_pump_out_work = False
         self.main_pump_in_work = False
         self.measure = False
+        self.mission_paused = False
         self.current_date = str(datetime.datetime.now().strftime("%Y_%m_%d"))
         with open(f"/home/{self.username}/catkin_ws/src/water_drone/config/config.json", "r") as f:
             self.config = json.load(f)
@@ -69,19 +70,26 @@ class Pumps:
         self.timestamp = data.header.stamp.secs
 
     def start_pause_mission(self, command: str):
-        if self.measure and command == "start":
-            rospy.loginfo("Don't start mission while measure")
+        if (self.main_pump_in_work or self.measure or self.extra_pump_work) and command == "start":
+            rospy.loginfo(f"Don't start mission while: main pump in - {self.main_pump_in_work}, measure - {self.measure}, extra pump - {self.extra_pump_work}")
             return
+        if (command == "pause") == self.mission_paused:
+            rospy.loginfo(f"Mission is already {command}")
+            return
+        rospy.loginfo(f"Mission {command}")
         response = self.mavros_cmd(command=CommandCode.DO_PAUSE_CONTINUE, 
                                     param1=1 if command == "pause" else 0)
+        self.mission_paused = (command == "pause")
 
     def handle_run_pump(self, req):
         if req.main_pump:
             if req.pump_in:
+                self.start_pause_mission("pause")
                 self.pump_in_main()
                 self.measure = True
             else:
                 self.measure = False
+                self.start_pause_mission("start")
                 self.pump_out_main()
         else:
             self.pump_in(req.number_of_pump)
@@ -96,24 +104,25 @@ class Pumps:
         return all([not val for val in self.up_sensor_values])
     
     def pump_in_main(self):
-        rospy.loginfo("Start pump in water")
+        if self.check_up_sensor():
+            rospy.loginfo("Water is full")
+            return
         self.main_pump_in_work = True
-        # time.sleep(PUMP_IN_DELAY)
+        rospy.loginfo("Start pump in water")
         GPIO.output(self.config["rpi_pins"]["pump_in_main"], GPIO.LOW)
         while not self.check_up_sensor():
-            time.sleep(0.5)
+            time.sleep(0.5)   
         time.sleep(MAIN_PUMP_IN_DELAY)
         GPIO.output(self.config["rpi_pins"]["pump_in_main"], GPIO.HIGH)
         self.main_pump_in_work = False
         rospy.loginfo("Finished pump in water")
     
     def pump_out_main(self):
-        rospy.loginfo("Start pump out water")
         if self.main_pump_in_work or self.measure or self.extra_pump_work:
             rospy.loginfo(f"Not pump out water because of: main pump in - {self.main_pump_in_work}, measure - {self.measure}, extra pump - {self.extra_pump_work}")
             return
         self.main_pump_out_work = True
-        # time.sleep(PUMP_IN_DELAY)
+        rospy.loginfo("Start pump out water")
         GPIO.output(self.config["rpi_pins"]["pump_out_main"], GPIO.LOW)
         while not self.check_low_sensor():
             if self.main_pump_in_work:
@@ -122,7 +131,13 @@ class Pumps:
                 GPIO.output(self.config["rpi_pins"]["pump_out_main"], GPIO.HIGH)
                 return
             time.sleep(0.5)
-        time.sleep(MAIN_PUMP_OUT_DELAY)
+        start_time = time.time()
+        while (time.time() - start_time) < MAIN_PUMP_OUT_DELAY:
+            if self.main_pump_in_work:
+                rospy.loginfo("Stop pump out water")
+                self.main_pump_out_work = False
+                GPIO.output(self.config["rpi_pins"]["pump_out_main"], GPIO.HIGH)
+                return
         GPIO.output(self.config["rpi_pins"]["pump_out_main"], GPIO.HIGH)
         self.main_pump_out_work = False
         rospy.loginfo("Finished pump out water")
@@ -142,7 +157,7 @@ class Pumps:
         if number_of_pump in self.full_pumps:
             rospy.loginfo(f"Bottle number {number_of_pump} as already full")
             return
-        rospy.loginfo(f"Start pump in water in pump {number_of_pump}")
+        rospy.loginfo(f"Request to pump in water in pump {number_of_pump}")
         self.full_pumps.append(number_of_pump)
         self.start_pause_mission("pause")
         with open(self.pumps_filename, "a") as f:
@@ -151,9 +166,11 @@ class Pumps:
         self.new_pump_pub.publish(self._create_new_pump_message(number_of_pump))
         self.pump_in_main()
         self.extra_pump_work = True
+        rospy.loginfo(f"Start pump in water in bottle {number_of_pump}")
         GPIO.output(self.config["rpi_pins"][f"pump{number_of_pump}"], GPIO.LOW)
         time.sleep(PUMP_IN_DELAY)
         GPIO.output(self.config["rpi_pins"][f"pump{number_of_pump}"], GPIO.HIGH)
+        rospy.loginfo(f"Finished pump in water in bottle {number_of_pump}")
         self.extra_pump_work = False
         self.start_pause_mission("start")
         self.pump_out_main()

@@ -30,6 +30,7 @@ class WaspmoteSensors:
         self.interval = self.config["general"]["interval"]  #how often to create new file
         self.last_time = 0
         self.current_date = str(datetime.datetime.now().strftime("%Y_%m_%d"))
+        # self.create_folder()
         self.is_armed = False
         self.measure = False
         rospy.loginfo(f"Get sensors is ready. Current data {self.current_date}")
@@ -37,28 +38,28 @@ class WaspmoteSensors:
         rospy.Subscriber("/mavros/global_position/global", NavSatFix, self.callback_gps)
         rospy.Subscriber("/mavros/mission/reached", WaypointReached, self.start_measure)
         self.start_measure_publisher = rospy.Publisher("write_measure_status", String, queue_size=10)
-        rospy.wait_for_service('/mavros/cmd/command')
-        self.mavros_cmd = rospy.ServiceProxy('/mavros/cmd/command', CommandLong)
+        # rospy.wait_for_service('/mavros/cmd/command')
+        # self.mavros_cmd = rospy.ServiceProxy('/mavros/cmd/command', CommandLong)
         rospy.wait_for_service('run_pump')
         self.run_pump = rospy.ServiceProxy('run_pump', RunPump)
         self.lat = 0
         self.lon = 0
         self.timestamp = 0
     
-    def start_pause_mission(self, command: str):
-        response = self.mavros_cmd(command=CommandCode.DO_PAUSE_CONTINUE, 
-                                    param1=1 if command == "pause" else 0)
+    # def start_pause_mission(self, command: str):
+    #     response = self.mavros_cmd(command=CommandCode.DO_PAUSE_CONTINUE, 
+    #                                 param1=1 if command == "pause" else 0)
 
     def start_measure(self, data):
         rospy.loginfo(f"Waypoint reached: {data}")
-        self.start_pause_mission("pause")
+        # self.start_pause_mission("pause")
         self.run_pump(main_pump=1, pump_in=1, number_of_pump=0)
         self.measure = True
         self.start_measure_publisher.publish("measure")
         time.sleep(MEASURE_TIMEOUT)
         self.measure = False
         self.start_measure_publisher.publish("dont measure")
-        self.start_pause_mission("start")
+        # self.start_pause_mission("start")
         self.run_pump(main_pump=1, pump_in=0, number_of_pump=0)
 
     def callback_gps(self, data):
@@ -82,6 +83,17 @@ class WaspmoteSensors:
         self.data_msg.NO3 = data["NO3"]
         self.data_msg.NH4 = data["NH4"]
         self.data_msg.Cl = data["Cl"]
+
+    # def create_folder(self) -> None:
+    #     if not (os.path.isdir(f"/home/{self.username}/data")):
+    #         os.mkdir(f"/home/{self.username}/data")
+    #         rospy.loginfo("Folder 'data' created")
+    #     if not (os.path.isdir(f"/home/{self.username}/data/{self.current_date}")):
+    #         os.mkdir(f"/home/{self.username}/data/{self.current_date}")
+    #         os.mkdir(f"/home/{self.username}/data/{self.current_date}/sent")
+    #         os.mkdir(f"/home/{self.username}/data/{self.current_date}/sensors_data")
+    #         os.mkdir(f"/home/{self.username}/data/{self.current_date}/gps")
+    #         rospy.loginfo("New data folders created")
 
     def publish_data(self) -> None:
         ports = glob.glob('/dev/ttyUSB[0-9]')
@@ -238,6 +250,5 @@ class WaspmoteSensors:
                     stopbits=serial.STOPBITS_ONE,
                     bytesize=serial.EIGHTBITS,
                 )
-
 
 WaspmoteSensors().publish_data()
