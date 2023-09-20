@@ -14,7 +14,7 @@ from water_drone.srv import RunPump
 from water_drone.msg import WaterLevelSensorsData, NewPump
 
 PUMP_IN_DELAY = 30
-MAIN_PUMP_IN_DELAY = 10 # Delay after water in up sensor
+MAIN_PUMP_IN_DELAY = 20 # Delay after water in up sensor
 MAIN_PUMP_OUT_DELAY = 15 # Delay after no water in low sensor
 
 class Pumps:
@@ -195,6 +195,7 @@ class Pumps:
             if self.measure:
                 if data.up_sensor:
                     time_to_pump_in_mes = time.time()
+                    rospy.loginfo("Pump in water while measure")
                     GPIO.output(self.config["rpi_pins"]["pump_in_main"], GPIO.LOW)
                 if time_to_pump_in_mes != 0 and (time.time() - time_to_pump_in_mes) > MAIN_PUMP_IN_DELAY:
                     time_to_pump_in_mes = 0

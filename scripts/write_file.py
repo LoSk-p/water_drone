@@ -134,9 +134,9 @@ class GetSensors:
     def callback_sensors(self, data: SensorData) -> None:
         # rospy.loginfo(f"armed: {self.is_armed}, measure: {self.measure}")
         if self.is_armed and self.measure:
-            data_dict = message_converter.convert_ros_message_to_dictionary(data) 
-            self.measurement = easy_mean(median(data_dict))
-            rospy.loginfo(f"Filtered: {self.measurement}, not filtered: {data_dict}")
+            self.measurement = message_converter.convert_ros_message_to_dictionary(data) 
+            # self.measurement = easy_mean(median(data_dict))
+            rospy.loginfo(f"Not filtered: {self.measurement}")
 
             with open(self.data_filename) as f:
                 try:
@@ -168,12 +168,22 @@ class GetSensors:
                     mean_values.pop("geo", None)
                 if "timestamp" in mean_values:
                     mean_values.pop("timestamp", None)
-                number_of_meas = len(values_for_mean)
+                # number_of_meas = len(values_for_mean)
+                number_of_meas = deepcopy(mean_values)
+                for key in number_of_meas.keys():
+                    number_of_meas[key] = 0
+                    if mean_values[key] != "None":
+                        mean_values[key] = 0
                 for measurement in values_for_mean:
                     for key in mean_values.keys():
-                        mean_values[key] += measurement[key]
+                        if measurement[key] != "None":
+                            if mean_values[key] == "None":
+                                mean_values[key] = 0
+                            mean_values[key] += float(measurement[key])
+                            number_of_meas[key] += 1
                 for key in mean_values.keys():
-                    mean_values[key] = mean_values[key]/number_of_meas
+                    if mean_values[key] != "None":
+                        mean_values[key] = mean_values[key]/number_of_meas[key]
                 if "geo" in values_for_mean[0]:
                     mean_values["geo"] = values_for_mean[0]["geo"]
                 if "timestamp" in values_for_mean[-1]:
