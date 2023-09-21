@@ -394,17 +394,17 @@ void Socket_A_Calib(int conc_temp)
   aux_A_p3 = EEPROMReadLong(addr_A_p3);
   const float temp_volts_A[] = {LongToFloat(aux_A_p1), LongToFloat(aux_A_p2), LongToFloat(aux_A_p3)};
   SensorSocketA.setCalibrationPoints(temp_volts_A, concent, 3);
-  SWIonsBoard.ON();
   for (int i = 0; i < counter; i++) {
+    SWIonsBoard.ON();
     volts = SensorSocketA.read();
     if (debug == 1) {
       USB.print(volts);
       USB.print(F(" - "));
       USB.println(i);
     }
+    SWIonsBoard.OFF();
     delay(zadergka);
   }
-  SWIonsBoard.OFF();
   if (conc_temp == concent_A_1)
   {
     EEPROMWriteLong(addr_A_p1, FloatToLong(volts));
@@ -447,17 +447,17 @@ void Socket_B_Calib(int conc_temp)
   aux_B_p3 = EEPROMReadLong(addr_B_p3);
   const float temp_volts_B[] = {LongToFloat(aux_B_p1), LongToFloat(aux_B_p2), LongToFloat(aux_B_p3)};
   SensorSocketB.setCalibrationPoints(temp_volts_B, concent, 3);
-  SWIonsBoard.ON();
   for (int i = 0; i < counter; i++) {
+    SWIonsBoard.ON();
     volts = SensorSocketB.read();
     if (debug == 1) {
       USB.print(volts);
       USB.print(F(" - "));
       USB.println(i);
     }
+    SWIonsBoard.OFF();
     delay(zadergka);
   }
-  SWIonsBoard.OFF();
   if (conc_temp == concent_B_1)
   {
     EEPROMWriteLong(addr_B_p1, FloatToLong(volts));
@@ -503,15 +503,16 @@ void Socket_C_Calib(int conc_temp)
   SensorSocketC.setCalibrationPoints(temp_volts_C, concent, 3);
   SWIonsBoard.ON();
   for (int i = 0; i < counter; i++) {
+    SWIonsBoard.ON();
     volts = SensorSocketC.read();
     if (debug == 1) {
       USB.print(volts);
       USB.print(F(" - "));
       USB.println(i);
     }
+    SWIonsBoard.OFF();
     delay(zadergka);
   }
-  SWIonsBoard.OFF();
   if (conc_temp == concent_C_1)
   {
     EEPROMWriteLong(addr_C_p1, FloatToLong(volts));
@@ -555,17 +556,17 @@ void Socket_D_Calib(int conc_temp)
   aux_D_p3 = EEPROMReadLong(addr_D_p3);
   float temp_volts_D[] = {LongToFloat(aux_D_p1), LongToFloat(aux_D_p2), LongToFloat(aux_D_p3)};
   SensorSocketD.setCalibrationPoints(temp_volts_D, concent, 3);
-  SWIonsBoard.ON();
   for (int i = 0; i < counter; i++) {
+    SWIonsBoard.ON();
     volts = SensorSocketD.read();
     if (debug == 1) {
       USB.print(volts);
       USB.print(F(" - "));
       USB.println(i);
     }
+    SWIonsBoard.OFF();
     delay(zadergka);
   }
-  SWIonsBoard.OFF();
   if (conc_temp == concent_D_1)
   {
     EEPROMWriteLong(addr_D_p1, FloatToLong(volts));
@@ -694,7 +695,7 @@ void SensorData() {
       USB.print(F(", value: "));
       USB.println(SOCK_A_Calc);
     }
-    delay(500);
+    delay(1500);
     SOCK_B_Raw = SensorSocketB.read();
     SOCK_B_Calc = SensorSocketB.calculateConcentration(SOCK_B_Raw);
     if (debug == 1) {
@@ -703,7 +704,7 @@ void SensorData() {
       USB.print(F(", value: "));
       USB.println(SOCK_B_Calc);
     }
-    delay(500);
+    delay(1500);
     SOCK_C_Raw = SensorSocketC.read();
     SOCK_C_Calc = SensorSocketC.calculateConcentration(SOCK_C_Raw);
     if (debug == 1) {
@@ -712,7 +713,7 @@ void SensorData() {
       USB.print(F(", value: "));
       USB.println(SOCK_C_Calc);
     }
-    delay(500);
+    delay(1500);
     SOCK_D_Raw = SensorSocketD.read();
     SOCK_D_Calc = SensorSocketD.calculateConcentration(SOCK_D_Raw);
     if (debug == 1) {
