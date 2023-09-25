@@ -97,6 +97,7 @@ class WaspmoteSensors:
 
     def find_usb_ports(self):
         ports = glob.glob('/dev/ttyUSB[0-9]')
+        rospy.loginfo(f"USB ports: {ports}")
         while len(ports) < 2:
             rospy.loginfo(f"Wait for USB ports. Now: {ports}")
             time.sleep(5)
@@ -108,9 +109,8 @@ class WaspmoteSensors:
         subprocess.call(["uhubctl", "-l", "2", "-a", "off"])
         time.sleep(1)
         subprocess.call(["uhubctl", "-l", "2", "-a", "on"])
-
-    def publish_data(self) -> None:
-        ports = self.find_usb_ports()
+    
+    def get_serial(self, ports):
         ser = serial.Serial(
             ports[0],
             baudrate=115200,
@@ -125,6 +125,17 @@ class WaspmoteSensors:
             stopbits=serial.STOPBITS_ONE,
             bytesize=serial.EIGHTBITS,
         )
+        return ser, ser1
+
+    def publish_data(self) -> None:
+        ports = self.find_usb_ports()
+        try:
+            ser, ser1 = self.get_serial(ports)
+        except Exception as e:
+            rospy.logerr(f"Exception in open serial: {e}. Restarting USB..")
+            self.restart_usb()
+            ports = self.find_usb_ports()
+            ser, ser1 = self.get_serial(ports)
         time.sleep(1)
         pub = rospy.Publisher("sensor_data", SensorData, queue_size=10)
         data = {
@@ -171,12 +182,9 @@ class WaspmoteSensors:
                             latest_file = max(list_of_files, key=os.path.getctime)
                             f = open(latest_file, "a")
                         data_prev = data_read[2:]
-                        rospy.loginfo(f"data prev: {data_prev}, data prev 0: {data_prev[0]}")
                         if data_prev[0] == "$":
-                            rospy.loginfo("in $")
                             data_prev = data_prev.split("|")
                             if data_prev[0] == "$w":
-                                rospy.loginfo("in $w")
                                 data["temperature"] = data_prev[1]
                                 data["pH"] = data_prev[2]
                                 data["conductivity"] = data_prev[3]
@@ -221,19 +229,6 @@ class WaspmoteSensors:
                 rospy.logerr(f"Exception in get sensors data: {e}")
                 self.restart_usb()
                 ports = self.find_usb_ports()
-                ser = serial.Serial(
-                    ports[0],
-                    baudrate=115200,
-                    parity=serial.PARITY_NONE,
-                    stopbits=serial.STOPBITS_ONE,
-                    bytesize=serial.EIGHTBITS,
-                )
-                ser1 = serial.Serial(
-                    ports[1],
-                    baudrate=115200,
-                    parity=serial.PARITY_NONE,
-                    stopbits=serial.STOPBITS_ONE,
-                    bytesize=serial.EIGHTBITS,
-                )
+                ser, ser1 = self.get_serial(ports)
 
 WaspmoteSensors().publish_data()

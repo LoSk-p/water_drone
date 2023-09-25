@@ -7,14 +7,14 @@ import json
 import getpass
 from sensor_msgs.msg import NavSatFix
 import datetime
-from mavros_msgs.srv import CommandLong
+from mavros_msgs.srv import SetMode, WaypointPull
 from mavros_msgs.msg import CommandCode
 
 from water_drone.srv import RunPump
 from water_drone.msg import WaterLevelSensorsData, NewPump
 
 PUMP_IN_DELAY = 30
-MAIN_PUMP_IN_DELAY = 20 # Delay after water in up sensor
+MAIN_PUMP_IN_DELAY = 60 # Delay after water in up sensor
 MAIN_PUMP_OUT_DELAY = 15 # Delay after no water in low sensor
 
 class Pumps:
@@ -60,9 +60,12 @@ class Pumps:
         self.publisher = rospy.Publisher("water_level_sensors", WaterLevelSensorsData, queue_size=10)
         self.new_pump_pub = rospy.Publisher("new_pump", NewPump, queue_size=10)
         rospy.Subscriber("/mavros/global_position/global", NavSatFix, self.callback_gps)
-        rospy.wait_for_service('/mavros/cmd/command')
-        self.mavros_cmd = rospy.ServiceProxy('/mavros/cmd/command', CommandLong)
-        rospy.loginfo("Pumps control is ready")
+        rospy.wait_for_service('/mavros/set_mode')
+        self.mavros_setmode = rospy.ServiceProxy('/mavros/set_mode', SetMode)
+        rospy.wait_for_service('/mavros/mission/pull')
+        mavros_mission_pull = rospy.ServiceProxy('/mavros/mission/pull', WaypointPull)
+        res_mission_pull = mavros_mission_pull()
+        rospy.loginfo(f"Pumps control is ready. Mission pulled: {res_mission_pull}")
 
     def callback_gps(self, data):
         self.lat = data.latitude
@@ -77,8 +80,7 @@ class Pumps:
             rospy.loginfo(f"Mission is already {command}")
             return
         rospy.loginfo(f"Mission {command}")
-        response = self.mavros_cmd(command=CommandCode.DO_PAUSE_CONTINUE, 
-                                    param1=1 if command == "pause" else 0)
+        response = self.mavros_setmode(custom_mode="LOITER" if command == "pause" else "AUTO")
         self.mission_paused = (command == "pause")
 
     def handle_run_pump(self, req):
