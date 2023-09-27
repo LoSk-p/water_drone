@@ -111,9 +111,9 @@ class WaspmoteSensors:
 
     def restart_usb(self):
         rospy.loginfo("Restart USB")
-        subprocess.call(["uhubctl", "-l", "1-1", "-a", "off"])
+        subprocess.call(["uhubctl", "-l", "1-1", "-p", "3", "-a", "off"])
         time.sleep(1)
-        subprocess.call(["uhubctl", "-l", "1-1", "-a", "on"])
+        subprocess.call(["uhubctl", "-l", "1-1", "-p", "3", "-a", "on"])
     
     def get_serial(self, ports):
         ser = serial.Serial(
