@@ -18,7 +18,7 @@ from water_drone.srv import RunPump
 from mavros_msgs.srv import CommandLong
 from mavros_msgs.msg import CommandCode
 
-MEASURE_TIMEOUT = 500
+MEASURE_TIMEOUT = 300
 
 class WaspmoteSensors:
     def __init__(self) -> None:
@@ -96,19 +96,24 @@ class WaspmoteSensors:
     #         rospy.loginfo("New data folders created")
 
     def find_usb_ports(self):
-        ports = glob.glob('/dev/ttyUSB[0-9]')
-        rospy.loginfo(f"USB ports: {ports}")
-        while len(ports) < 2:
-            rospy.loginfo(f"Wait for USB ports. Now: {ports}")
+        ports_available = glob.glob('/dev/ttyUSB[0-9]')
+        rospy.loginfo(f"USB ports: {ports_available}")
+        fail_count = 0
+        while len(ports_available) < 2:
+            fail_count += 1
+            if fail_count > 5:
+                self.restart_usb()
+                fail_count = 0
             time.sleep(5)
-            ports = glob.glob('/dev/ttyUSB[0-9]')
-        return ports
+            ports_available = glob.glob('/dev/ttyUSB[0-9]')
+            rospy.loginfo(f"Wait for USB ports. Now: {ports_available}")
+        return ports_available
 
     def restart_usb(self):
         rospy.loginfo("Restart USB")
-        subprocess.call(["uhubctl", "-l", "2", "-a", "off"])
+        subprocess.call(["uhubctl", "-l", "1-1", "-a", "off"])
         time.sleep(1)
-        subprocess.call(["uhubctl", "-l", "2", "-a", "on"])
+        subprocess.call(["uhubctl", "-l", "1-1", "-a", "on"])
     
     def get_serial(self, ports):
         ser = serial.Serial(
