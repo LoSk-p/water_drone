@@ -15,7 +15,7 @@ from water_drone.srv import RunPump
 from water_drone.msg import WaterLevelSensorsData, NewPump
 
 PUMP_IN_DELAY = 30
-MAIN_PUMP_IN_DELAY = 60 # Delay after water in up sensor
+MAIN_PUMP_IN_DELAY = 55 # Delay after water in up sensor
 MAIN_PUMP_OUT_DELAY = 15 # Delay after no water in low sensor
 
 class Pumps:

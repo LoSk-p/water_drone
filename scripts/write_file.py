@@ -21,6 +21,20 @@ def _generate_pubkey(id: str) -> str:
     verify_key_hex = verify_key.hexdigest()
     return str(verify_key_hex)
 
+def filter_meas(measurements, med_length=4):
+    mean = {}
+    for key in measurements.keys():
+        meas = measurements[key].copy()
+        if len(meas) < med_length:
+            mean[key] = sum(measurements[key])/len(measurements[key])
+            continue
+        meas.sort()
+        failed = len(meas) // 4
+        meas = meas[failed:]
+        meas = meas[:failed]
+        mean[key] = sum(meas)/len(meas)
+    return mean
+
 def median(measurements, med_length=3):
     # Creating buffer
     meas = {}
@@ -162,7 +176,10 @@ class GetSensors:
                     )
                 else:
                     dict_from_file.update(measurmnet_format_data)
-                values_for_mean = dict_from_file[public_address]["measurements"][len(dict_from_file[public_address]["measurements"])//2:]
+                if len(dict_from_file[public_address]["measurements"]) < 3:
+                    values_for_mean = dict_from_file[public_address]["measurements"]
+                else:
+                    values_for_mean = dict_from_file[public_address]["measurements"][2:]
                 mean_values = deepcopy(values_for_mean[0])
                 if "geo" in mean_values:
                     mean_values.pop("geo", None)
@@ -170,8 +187,10 @@ class GetSensors:
                     mean_values.pop("timestamp", None)
                 # number_of_meas = len(values_for_mean)
                 number_of_meas = deepcopy(mean_values)
+                values_for_keys = {}
                 for key in number_of_meas.keys():
                     number_of_meas[key] = 0
+                    values_for_keys[key] = []
                     if mean_values[key] != "None":
                         mean_values[key] = 0
                 for measurement in values_for_mean:
@@ -179,16 +198,26 @@ class GetSensors:
                         if measurement[key] != "None":
                             if mean_values[key] == "None":
                                 mean_values[key] = 0
+                            if key == "pH":
+                                if float(measurement[key]) > 12:
+                                    measurement[key] = 12
+                            if float(measurement[key]) < 0:
+                                measurement[key] = 0
+                            values_for_keys[key].append(float(measurement[key]))
                             mean_values[key] += float(measurement[key])
                             number_of_meas[key] += 1
                 for key in mean_values.keys():
                     if mean_values[key] != "None":
                         mean_values[key] = mean_values[key]/number_of_meas[key]
+                filtered_mean = filter_meas(values_for_keys)
+                rospy.loginfo(f"Filtered mean: {filtered_mean}")
                 if "geo" in values_for_mean[0]:
                     mean_values["geo"] = values_for_mean[0]["geo"]
+                    filtered_mean["geo"] = values_for_mean[0]["geo"]
                 if "timestamp" in values_for_mean[-1]:
                     mean_values["timestamp"] = values_for_mean[-1]["timestamp"]
-                dict_from_file[public_address]["mean_values"] = mean_values
+                    filtered_mean["timestamp"] = values_for_mean[-1]["timestamp"]
+                dict_from_file[public_address]["mean_values"] = filtered_mean
                 json.dump(dict_from_file, f)
                 f.write("\n")
                 f.close()
