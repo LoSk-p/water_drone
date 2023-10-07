@@ -125,6 +125,9 @@ class Pumps:
         if self.check_up_sensor():
             rospy.loginfo("Water is full")
             return
+        while self.main_pump_out_work:
+            time.sleep(5)
+            rospy.loginfo("Wait for out water")
         self.main_pump_in_work = True
         rospy.loginfo("Start pump in water")
         GPIO.output(self.config["rpi_pins"]["pump_in_main"], GPIO.LOW)

@@ -60,6 +60,7 @@ find_package(catkin REQUIRED COMPONENTS
 add_service_files(
   FILES
   RunPump.srv
+  PushMission.srv
 )
 
 ## Generate actions in the 'action' folder
@@ -167,6 +168,7 @@ include_directories(
    scripts/write_file.py
    scripts/sender.py
    scripts/pumps_control.py
+   scripts/mission_push.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
 

@@ -95,6 +95,16 @@ class Sender:
                         public_key = list(dict_from_file.keys())[0]
                         mean_values = deepcopy(dict_from_file[public_key]["mean_values"])
                         mean_values.pop("geo")
+
+                        #######################################
+                        if float(mean_values["NO3"]) > 1000 or float(mean_values["NO3"]) < 0:
+                            mean_values.pop("NO3")
+                        if float(mean_values["NO2"]) > 1000 or float(mean_values["NO2"]) < 0:
+                            mean_values.pop("NO2")
+                        if float(mean_values["Cl"]) > 1000 or float(mean_values["Cl"]) < 0:
+                            mean_values.pop("Cl")
+                        #######################################
+
                         geo = dict_from_file[public_key]["mean_values"]["geo"]
                         json_for_datalog = {public_key: {"model": 3, "geo": f"{geo[0]},{geo[1]}", "measurements": [mean_values]}}
                         data_for_datalog = json.dumps(json_for_datalog)

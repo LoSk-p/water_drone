@@ -3,3 +3,4 @@
 /build
 /config/__pycache__
 /scripts/__pycache__
+/config/mission.json
