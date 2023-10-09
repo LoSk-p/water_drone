@@ -2,6 +2,7 @@
     <include file="$(find mavros)/launch/apm2.launch">
         <arg name="fcu_url" value="/dev/ttyAMA1" />
     </include>
+    <node pkg="water_drone" type="rc_listener.py" name="rc_listener" respawn="true" output="log" />
     <node pkg="water_drone" type="mission_push.py" name="mission_push" respawn="true" output="log" />
     <node pkg="water_drone" type="pumps_control.py" name="pumps_control" respawn="true" output="log" />
     <node pkg="water_drone" type="write_file.py" name="write_file" respawn="true" output="log" />

@@ -17,6 +17,7 @@ from water_drone.msg import SensorData
 from water_drone.srv import RunPump
 from mavros_msgs.srv import CommandLong
 from mavros_msgs.msg import CommandCode
+from std_srvs.srv import Empty
 
 MEASURE_TIMEOUT = 300
 
@@ -42,9 +43,12 @@ class WaspmoteSensors:
         # self.mavros_cmd = rospy.ServiceProxy('/mavros/cmd/command', CommandLong)
         rospy.wait_for_service('run_pump')
         self.run_pump = rospy.ServiceProxy('run_pump', RunPump)
+        rospy.wait_for_service('run_main_pump_in_30')
+        self.run_main_pump_in_30 = rospy.ServiceProxy('run_main_pump_in_30', Empty)
         self.lat = 0
         self.lon = 0
         self.timestamp = 0
+        rospy.Service('start_measure', Empty, self.start_measure)
     
     # def start_pause_mission(self, command: str):
     #     response = self.mavros_cmd(command=CommandCode.DO_PAUSE_CONTINUE, 
@@ -162,18 +166,18 @@ class WaspmoteSensors:
         while not rospy.is_shutdown():
             time.sleep(1)
             try:
-                if self.is_armed and self.measure:
-                    if ser.inWaiting() > 0 or ser1.inWaiting() > 0:
-                        if ser.inWaiting() > 0:
-                            data_read = str(ser.readline())
-                            if "J#" in data_read:
-                                ser1_fail_count += 1
-                            rospy.loginfo(f"Sensors data: {data_read}")
-                        if ser1.inWaiting() > 0:
-                            data_read = str(ser1.readline())
-                            if "J#" in data_read:
-                                ser2_fail_count += 1
-                            rospy.loginfo(f"Sensors data 1: {data_read}")
+                if ser.inWaiting() > 0 or ser1.inWaiting() > 0:
+                    if ser.inWaiting() > 0:
+                        data_read = str(ser.readline())
+                        if "J#" in data_read:
+                            ser1_fail_count += 1
+                        rospy.loginfo(f"Sensors data: {data_read}")
+                    if ser1.inWaiting() > 0:
+                        data_read = str(ser1.readline())
+                        if "J#" in data_read:
+                            ser2_fail_count += 1
+                        rospy.loginfo(f"Sensors data 1: {data_read}")
+                    if self.is_armed and self.measure:
                         if time.time() - self.last_time > self.interval:
                             rospy.loginfo("in if new file get_sensor")
                             f = open(
@@ -215,6 +219,8 @@ class WaspmoteSensors:
                                 ser1_fail_count = 0
                                 ser2_fail_count = 0
                                 rospy.loginfo(f"JSON sensor data: {data}")
+                                if (float(data["NO2"]) == -1) and (float(data["NO3"]) == -1) and (float(data["Cl"]) == -1):
+                                    self.run_main_pump_in_30()
                                 self.get_msg_data(data)
                                 pub.publish(self.data_msg)
                                 data = {

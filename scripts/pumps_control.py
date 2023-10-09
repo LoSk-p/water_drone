@@ -5,6 +5,7 @@ import rospy
 import time
 import json
 import getpass
+import os
 from sensor_msgs.msg import NavSatFix
 import datetime
 from mavros_msgs.srv import SetMode, WaypointPull
@@ -15,7 +16,7 @@ from water_drone.srv import RunPump
 from water_drone.msg import WaterLevelSensorsData, NewPump
 
 PUMP_IN_DELAY = 30
-MAIN_PUMP_IN_DELAY = 55 # Delay after water in up sensor
+MAIN_PUMP_IN_DELAY = 70 # Delay after water in up sensor
 MAIN_PUMP_OUT_DELAY = 15 # Delay after no water in low sensor
 
 class Pumps:
@@ -33,10 +34,16 @@ class Pumps:
         self.current_date = str(datetime.datetime.now().strftime("%Y_%m_%d"))
         with open(f"/home/{self.username}/catkin_ws/src/water_drone/config/config.json", "r") as f:
             self.config = json.load(f)
+        self.pumps_full_filename = f"/home/{self.username}/data/full_pumps.json"
         self.pumps_filename = f"/home/{self.username}/data/{self.current_date}/pumps/pumps-{time.time()}.json"
         self.low_sensor_values = []
         self.up_sensor_values = []
-        self.full_pumps = []
+        if os.path.isfile(self.pumps_full_filename):
+            with open(self.pumps_full_filename, "r") as f:
+                self.full_pumps = json.load(f)
+        else:
+            self.full_pumps = []
+        rospy.loginfo(f"Full pumps: {self.full_pumps}")
         self.bottles_queue = [1, 4, 2, 5, 3, 6]
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(self.config["rpi_pins"]["sensor_up"], GPIO.IN)
@@ -62,6 +69,8 @@ class Pumps:
         # Services
         rospy.Service('run_pump', RunPump, self.handle_run_pump)
         rospy.Service('test_pumps', Empty, self.test_pumps)
+        rospy.Service('stop_pumps', Empty, self.stop_pumps)
+        rospy.Service('run_main_pump_in_30', Empty, self.run_main_pump_in_30)
 
         # Publishers
         self.publisher = rospy.Publisher("water_level_sensors", WaterLevelSensorsData, queue_size=10)
@@ -171,7 +180,18 @@ class Pumps:
         message.pump_number = str(pump_number)
         return message
 
-    def test_pumps(self):
+    def stop_pumps(self, data):
+        GPIO.output(self.config["rpi_pins"]["pump_in_main"], GPIO.HIGH)
+        GPIO.output(self.config["rpi_pins"]["pump_out_main"], GPIO.HIGH)
+        GPIO.output(self.config["rpi_pins"]["pump1"], GPIO.HIGH)
+        GPIO.output(self.config["rpi_pins"]["pump2"], GPIO.HIGH)
+        GPIO.output(self.config["rpi_pins"]["pump3"], GPIO.HIGH)
+        GPIO.output(self.config["rpi_pins"]["pump4"], GPIO.HIGH)
+        GPIO.output(self.config["rpi_pins"]["pump5"], GPIO.HIGH)
+        GPIO.output(self.config["rpi_pins"]["pump6"], GPIO.HIGH)
+        rospy.loginfo("All pumps stopped")
+
+    def test_pumps(self, data):
         rospy.loginfo("Start test pumps")
         rospy.loginfo("Turn on main pump in")
         GPIO.output(self.config["rpi_pins"]["pump_in_main"], GPIO.LOW)
@@ -206,6 +226,21 @@ class Pumps:
         time.sleep(4)
         GPIO.output(self.config["rpi_pins"]["pump6"], GPIO.HIGH)
 
+    def run_main_pump_in_30(self, data):
+        GPIO.output(self.config["rpi_pins"]["pump_in_main"], GPIO.LOW)
+        time.sleep(30)
+        GPIO.output(self.config["rpi_pins"]["pump_in_main"], GPIO.HIGH)
+
+    def update_full_pumps(self, number_of_pump: int):
+        self.full_pumps.append(number_of_pump)
+        rospy.loginfo(f"Update full pumps: {self.full_pumps}")
+        with open(self.pumps_full_filename, "w") as f:
+            json.dump(self.full_pumps, f)
+
+    def clear_full_pumps(self):
+        if os.path.isfile(self.pumps_full_filename):
+            os.remove(self.pumps_full_filename)
+
     def pump_in(self, number_of_pump: int):
         if not self.config["extra_pumps"]:
             rospy.logerr("The node was initialised without extra pumps")
@@ -214,7 +249,7 @@ class Pumps:
             rospy.loginfo(f"Bottle number {number_of_pump} as already full")
             return
         rospy.loginfo(f"Request to pump in water in pump {number_of_pump}")
-        self.full_pumps.append(number_of_pump)
+        self.update_full_pumps(number_of_pump)
         self.start_pause_mission("pause")
         with open(self.pumps_filename, "a") as f:
             json_data = json.dumps({"Lat": self.lat, "Lon": self.lon, "timestamp": self.timestamp, "pump_number": number_of_pump})

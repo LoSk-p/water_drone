@@ -169,6 +169,7 @@ include_directories(
    scripts/sender.py
    scripts/pumps_control.py
    scripts/mission_push.py
+   scripts/rc_listener.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
 
