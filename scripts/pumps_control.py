@@ -10,6 +10,7 @@ from sensor_msgs.msg import NavSatFix
 import datetime
 from mavros_msgs.srv import SetMode, WaypointPull
 from mavros_msgs.msg import CommandCode
+from mavros_msgs.msg import State
 from std_srvs.srv import Empty
 
 from water_drone.srv import RunPump
@@ -31,6 +32,8 @@ class Pumps:
         self.main_pump_in_work = False
         self.measure = False
         self.mission_paused = False
+        self.mode = None
+        self.prev_mode = None
         self.current_date = str(datetime.datetime.now().strftime("%Y_%m_%d"))
         with open(f"/home/{self.username}/catkin_ws/src/water_drone/config/config.json", "r") as f:
             self.config = json.load(f)
@@ -71,6 +74,7 @@ class Pumps:
         rospy.Service('test_pumps', Empty, self.test_pumps)
         rospy.Service('stop_pumps', Empty, self.stop_pumps)
         rospy.Service('run_main_pump_in_30', Empty, self.run_main_pump_in_30)
+        rospy.Service('clear_full_pumps', Empty, self.clear_full_pumps)
 
         # Publishers
         self.publisher = rospy.Publisher("water_level_sensors", WaterLevelSensorsData, queue_size=10)
@@ -78,6 +82,7 @@ class Pumps:
 
         # Subscribers
         rospy.Subscriber("/mavros/global_position/global", NavSatFix, self.callback_gps)
+        rospy.Subscriber("/mavros/state", State, self.get_state)
 
         rospy.wait_for_service('/mavros/set_mode')
         self.mavros_setmode = rospy.ServiceProxy('/mavros/set_mode', SetMode)
@@ -91,6 +96,9 @@ class Pumps:
         self.lon = data.longitude
         self.timestamp = data.header.stamp.secs
 
+    def get_state(self, data):
+        self.mode = data.mode
+
     def start_pause_mission(self, command: str):
         if (self.main_pump_in_work or self.measure or self.extra_pump_work) and command == "start":
             rospy.loginfo(f"Don't start mission while: main pump in - {self.main_pump_in_work}, measure - {self.measure}, extra pump - {self.extra_pump_work}")
@@ -99,7 +107,15 @@ class Pumps:
             rospy.loginfo(f"Mission is already {command}")
             return
         rospy.loginfo(f"Mission {command}")
-        response = self.mavros_setmode(custom_mode="LOITER" if command == "pause" else "AUTO")
+        if command == "pause":
+            self.prev_mode = self.mode
+        new_mode = "LOITER" if command == "pause" else self.prev_mode
+        response = self.mavros_setmode(custom_mode=new_mode)
+        time.sleep(1)
+        while self.mode != new_mode:
+            response = self.mavros_setmode(custom_mode=new_mode)
+            time.sleep(5)
+        rospy.loginfo(f"Mode changed to {new_mode}")
         self.mission_paused = (command == "pause")
 
     def handle_run_pump(self, req):
@@ -119,7 +135,7 @@ class Pumps:
                 self.start_pause_mission("start")
                 self.pump_out_main()
         else:
-            self.pump_in(req.number_of_pump)
+            return self.pump_in(req.number_of_pump)
         return True
 
     def check_low_sensor(self):
@@ -237,17 +253,18 @@ class Pumps:
         with open(self.pumps_full_filename, "w") as f:
             json.dump(self.full_pumps, f)
 
-    def clear_full_pumps(self):
+    def clear_full_pumps(self, data):
         if os.path.isfile(self.pumps_full_filename):
             os.remove(self.pumps_full_filename)
+            self.full_pumps = []
 
     def pump_in(self, number_of_pump: int):
         if not self.config["extra_pumps"]:
             rospy.logerr("The node was initialised without extra pumps")
-            return
+            return False
         if number_of_pump in self.full_pumps:
             rospy.loginfo(f"Bottle number {number_of_pump} as already full")
-            return
+            return False
         rospy.loginfo(f"Request to pump in water in pump {number_of_pump}")
         self.update_full_pumps(number_of_pump)
         self.start_pause_mission("pause")
@@ -269,6 +286,7 @@ class Pumps:
         time.sleep(1.5)
         GPIO.output(self.config["rpi_pins"][f"pump{number_of_pump}"], GPIO.HIGH)
         rospy.loginfo(f"Finished pump in water in pump {number_of_pump}")
+        return True
 
     def send_sensors_data(self):
         time_to_pump_in_mes = 0

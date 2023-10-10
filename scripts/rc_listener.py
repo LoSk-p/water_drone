@@ -37,7 +37,8 @@ class RCListener:
                     res = False
                     while not res:
                         rospy.loginfo(f"Start pump in water in bottle {self.pumps_queue[0]}")
-                        res = self.run_pump_service(main_pump=0, pump_in=0, number_of_pump=self.pumps_queue[0])
+                        result = self.run_pump_service(main_pump=0, pump_in=0, number_of_pump=self.pumps_queue[0])
+                        res = result.finished
                         rospy.loginfo(f"Water in bottle {self.pumps_queue[0]} pumped in with res: {res}")
                         self.pumps_queue.pop(0)
 

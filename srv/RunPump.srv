@@ -2,4 +2,4 @@ int8 main_pump
 int8 pump_in
 int64 number_of_pump
 ---
-int8 finished
+bool finished
